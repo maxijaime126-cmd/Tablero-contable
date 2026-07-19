@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de Control Contable</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F0F4F8;color:#1A202C;font-size:14px}
+:root{
+  --navy:#1B2A4A;--accent:#4299E1;--accent2:#3182CE;
+  --green:#276749;--greenl:#C6F6D5;--green2:#38A169;
+  --orange:#C05621;--orangel:#FEEBC8;
+  --purple:#553C9A;--purplel:#E9D8FD;
+  --red:#742A2A;--redl:#FED7D7;
+  --gray:#718096;--grayl:#EDF2F7;
+  --border:#E2E8F0;--bg:#F0F4F8;
+  --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,.08)
+}
+.wrap{max-width:1400px;margin:0 auto;padding:1rem}
+/* HEADER */
+.header{background:var(--navy);color:white;padding:.85rem 1.5rem;border-radius:var(--radius-lg);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.header h1{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:11px;opacity:.55;margin-top:2px}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.year-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border-radius:var(--radius);padding:5px 10px}
+.year-pill label{font-size:11px;color:rgba(255,255,255,.65)}
+.year-pill select{background:transparent;border:none;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;outline:none}
+.year-pill select option{color:#1A202C;background:white}
+.hbtn{background:rgba(255,255,255,.12);border:0.5px solid rgba(255,255,255,.2);color:white;border-radius:var(--radius);padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+/* SAVE BTN */
+.save-btn{background:#38A169;border:none;color:white;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:all .2s;position:relative}
+.save-btn:hover{background:#2F855A}
+.save-btn.unsaved{background:#E53E3E;animation:pulse 2s infinite}
+.save-btn.saving{background:#4299E1}
+.save-btn.saved{background:#38A169}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
+.save-indicator{position:fixed;top:12px;right:12px;background:#1A202C;color:white;padding:6px 12px;border-radius:var(--radius);font-size:12px;font-weight:600;opacity:0;transform:translateY(-8px);transition:all .25s;z-index:9999;pointer-events:none}
+.save-indicator.show{opacity:1;transform:translateY(0)}
+/* TABS */
+.tabs{display:flex;gap:3px;background:white;border-radius:var(--radius-lg);padding:4px;margin-bottom:1rem;box-shadow:var(--shadow);flex-wrap:wrap;border:0.5px solid var(--border)}
+.tab{padding:7px 12px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--gray);border-radius:var(--radius);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.tab.active{background:var(--accent);color:white}
+.tab:hover:not(.active){background:var(--grayl);color:#1A202C}
+.panel{display:none}.panel.active{display:block}
+/* BUTTONS */
+button{font-family:inherit;cursor:pointer;border-radius:var(--radius);border:0.5px solid var(--border);background:white;color:#1A202C;padding:7px 14px;font-size:13px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+button:hover{background:var(--grayl)}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-success{background:var(--green2);color:white;border-color:var(--green2)}
+.btn-danger{background:var(--redl);color:var(--red);border-color:#FC8181}
+.btn-warn{background:var(--orangel);color:var(--orange);border-color:#F6AD55}
+.btn-purple{background:var(--purplel);color:var(--purple);border-color:#B794F4}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--gray)}
+.btn-ghost:hover{background:var(--grayl)}
+.btn-sm{padding:4px 9px;font-size:12px}
+/* KPI */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem}
+.kpi{background:white;border-radius:var(--radius-lg);padding:.85rem 1rem;border:0.5px solid var(--border);box-shadow:var(--shadow)}
+.kpi-label{font-size:10px;color:var(--gray);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.kpi-val{font-size:22px;font-weight:700;line-height:1.1}
+.kpi-sub{font-size:11px;color:#A0AEC0;margin-top:2px}
+.prog-wrap{height:5px;background:var(--grayl);border-radius:99px;overflow:hidden;margin-top:5px}
+.prog-bar{height:100%;border-radius:99px;background:var(--accent);transition:width .4s}
+/* EMPRESA CARDS */
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.emp-card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.9rem 1rem;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);position:relative}
+.emp-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(66,153,225,.15);transform:translateY(-1px)}
+.emp-card.complete{border-color:var(--green2);background:#F0FFF4}
+.emp-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem}
+.emp-name{font-size:13px;font-weight:700;color:var(--navy)}
+.emp-badge{font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;flex-shrink:0;margin-left:6px}
+.b100{background:var(--greenl);color:var(--green)}.b75{background:#BEE3F8;color:#2B6CB0}.b50{background:var(--orangel);color:var(--orange)}.b0{background:var(--grayl);color:var(--gray)}
+.tarea-dots{display:flex;gap:4px;flex-wrap:wrap;margin:.4rem 0}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.d-hecho{background:var(--green2)}.d-pendiente{background:#FC8181}.d-nc{background:#CBD5E0}.d-empty{background:#E2E8F0}
+.emp-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-top:.5rem;padding-top:.5rem;border-top:0.5px solid var(--border)}
+.emp-footer strong{color:#2D3748}
+/* TRABAJO */
+.work-header{display:flex;gap:12px;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end}
+.work-field{display:flex;flex-direction:column;gap:4px}
+.work-field label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em}
+.work-grid{display:grid;grid-template-columns:1fr 310px;gap:1rem;align-items:start}
+@media(max-width:860px){.work-grid{grid-template-columns:1fr}}
+/* TAREA ROWS */
+.tarea-row{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.75rem 1rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);flex-wrap:wrap;transition:all .2s}
+.tarea-row.tr-hecho{border-color:var(--green2);background:#F0FFF4}
+.tarea-row.tr-pendiente{border-color:#FC8181;background:#FFF5F5}
+.tarea-row.tr-nc{background:var(--grayl);opacity:.8}
+.tarea-row.tr-cierre{border-left:3px solid var(--purple)}
+.tarea-name{font-size:13px;font-weight:600;color:#2D3748;min-width:105px;flex-shrink:0}
+.tarea-type{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px}
+.tt-cierre{background:var(--purplel);color:var(--purple)}
+/* ESTADOS — obligatorios, solo rotan entre los 3 */
+.estado-btns{display:flex;gap:4px;flex-wrap:wrap}
+.ebtn{padding:4px 11px;font-size:11px;font-weight:700;border-radius:99px;border:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:3px;opacity:.45}
+.ebtn:hover{opacity:.75;transform:scale(1.03)}
+.ebtn.active{opacity:1;transform:scale(1.05)}
+.ebtn-hecho{background:var(--greenl);color:var(--green)}
+.ebtn-hecho.active{border-color:var(--green2);box-shadow:0 0 0 2px rgba(56,161,105,.25)}
+.ebtn-pendiente{background:var(--redl);color:var(--red)}
+.ebtn-pendiente.active{border-color:#FC8181;box-shadow:0 0 0 2px rgba(252,129,129,.25)}
+.ebtn-nc{background:var(--grayl);color:var(--gray)}
+.ebtn-nc.active{border-color:#A0AEC0;box-shadow:0 0 0 2px rgba(160,174,192,.25)}
+.tarea-time-area{display:flex;align-items:center;gap:5px;margin-left:auto;flex-wrap:wrap}
+.mins-inp{width:58px;font-size:12px;padding:4px 5px;border-radius:var(--radius);border:0.5px solid var(--border);text-align:center;font-family:inherit}
+.mins-inp:focus{border-color:var(--accent);outline:none}
+.tarea-acum{font-size:10px;color:var(--gray);white-space:nowrap}
+/* SEC DIVIDER */
+.sec-divider{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;padding:.5rem 0;margin:.5rem 0 .3rem;display:flex;align-items:center;gap:8px}
+.sec-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* PILLS MESES */
+.mes-pills-wrap{display:flex;flex-wrap:wrap;gap:3px}
+.mes-pill{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .15s;white-space:nowrap}
+.mes-pill.active{background:var(--accent);color:white;border-color:var(--accent)}
+.mp-ok{background:var(--greenl);color:var(--green)}.mp-wip{background:var(--orangel);color:var(--orange)}.mp-empty{background:var(--grayl);color:var(--gray)}
+.mes-pill:hover:not(.active){border-color:var(--accent)}
+/* SIDEBAR */
+.scard{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.85rem 1rem;box-shadow:var(--shadow);margin-bottom:8px}
+.scard-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.55rem;display:flex;align-items:center;gap:4px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+.stat-row:last-child{border-bottom:none}
+.stat-val{font-weight:700;color:#1A202C}
+.timer-disp{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy);letter-spacing:-.02em;margin-bottom:5px}
+/* EJ INFO */
+.ej-info-bar{border-radius:var(--radius);padding:.5rem .85rem;font-size:12px;font-weight:500;margin-bottom:.75rem}
+.ej-ok{background:#F0FFF4;border:0.5px solid var(--green2);color:var(--green)}
+.ej-warn{background:var(--orangel);border:0.5px solid #F6AD55;color:var(--orange)}
+.ej-danger{background:var(--redl);border:0.5px solid #FC8181;color:var(--red)}
+/* PANEL TIEMPOS */
+.tiempo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.tiempo-card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem;box-shadow:var(--shadow)}
+.tiempo-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.tiempo-emp-name{font-size:13px;font-weight:700;color:var(--navy)}
+.tiempo-total-badge{font-size:13px;font-weight:700;padding:3px 10px;border-radius:99px;background:#EBF8FF;color:var(--accent2)}
+.tiempo-sub{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:.6rem}
+.tiempo-sub-item{background:var(--grayl);border-radius:var(--radius);padding:6px 8px}
+.tiempo-sub-label{font-size:10px;color:var(--gray);margin-bottom:2px}
+.tiempo-sub-val{font-weight:700;color:#2D3748;font-size:13px}
+/* ANUAL */
+.anual-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.anual-row:last-child{border-bottom:none}
+.anual-mes{width:110px;font-size:13px;font-weight:600;flex-shrink:0}
+.anual-bar-wrap{flex:1;height:9px;background:var(--grayl);border-radius:99px;overflow:hidden}
+.anual-bar{height:100%;border-radius:99px;background:var(--accent);transition:width .5s}
+.anual-pct{width:38px;text-align:right;font-size:12px;font-weight:700;color:var(--gray)}
+.ab{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.ab-ok{background:var(--greenl);color:var(--green)}.ab-wip{background:var(--orangel);color:var(--orange)}.ab-no{background:var(--grayl);color:var(--gray)}
+/* EJERCICIOS */
+.ej-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.ej-card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.9rem 1rem;position:relative;box-shadow:var(--shadow)}
+.ej-card.ec-danger{border-color:#FC8181;background:#FFF5F5}
+.ej-card.ec-warn{border-color:#F6AD55;background:#FFFAF0}
+.ej-card.ec-ok{border-color:#68D391;background:#F0FFF4}
+.ej-card.ec-nuevo{border:0.5px dashed var(--border);background:var(--bg);cursor:pointer}
+.ej-emp{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:.25rem}
+.ej-num{font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.04em}
+.ej-dates{font-size:11px;color:var(--gray);margin:.35rem 0}
+.ej-dates strong{color:#2D3748;font-weight:600}
+.ej-dias{font-size:11px;font-weight:700;margin-top:.3rem}
+.dias-ok{color:var(--green)}.dias-warn{color:var(--orange)}.dias-danger{color:var(--red)}
+.ej-tag{display:inline-block;background:var(--redl);color:var(--red);font-size:10px;font-weight:600;padding:2px 6px;border-radius:99px;margin:2px 2px 0 0}
+/* CONFIG */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:700px){.cfg-grid{grid-template-columns:1fr}}
+.cfg-box{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.cfg-footer{padding:.7rem 1rem;border-top:0.5px solid var(--border);display:flex;gap:8px}
+.cfg-row{display:flex;align-items:center;gap:8px;padding:7px 1rem;border-bottom:0.5px solid var(--border)}
+.cfg-num{font-size:11px;color:#A0AEC0;width:22px;text-align:right;flex-shrink:0}
+.cfg-inp{flex:1;font-size:13px;font-weight:500;padding:4px 7px;border-radius:var(--radius);border:0.5px solid transparent;background:transparent;font-family:inherit;color:var(--navy)}
+.cfg-inp:focus{border-color:var(--accent);background:white;outline:none}
+.year-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:.75rem}
+.year-card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.8rem 1rem;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.year-card:hover{border-color:var(--accent)}
+.year-card.ay{border-color:var(--accent);background:#EBF8FF}
+.year-num{font-size:19px;font-weight:700;color:var(--navy)}
+.year-sub{font-size:10px;color:var(--gray);margin-top:2px}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:var(--radius-lg);padding:1.5rem;width:min(520px,96vw);max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--navy)}
+.frow{margin-bottom:.8rem}
+.frow label{display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.frow input,.frow select,.frow textarea{width:100%;font-size:13px;padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit;color:#1A202C}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--accent);outline:none}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap}
+.sel{font-size:13px;padding:7px 11px;border-radius:var(--radius);border:0.5px solid var(--border);background:white;color:#1A202C;cursor:pointer;font-family:inherit}
+.card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem;box-shadow:var(--shadow)}
+.sec{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin:1.1rem 0 .55rem}
+.row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A202C;color:white;padding:.7rem 1.2rem;border-radius:var(--radius-lg);font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;z-index:1000}
+.toast.show{opacity:1;transform:translateY(0)}
+/* BACKUP BADGE */
+.backup-badge{font-size:10px;background:rgba(255,255,255,.15);border-radius:99px;padding:2px 8px;color:rgba(255,255,255,.75)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1><i class="ti ti-clipboard-list"></i> Tablero de Control Contable</h1>
+      <div class="sub" id="hdate"></div>
+    </div>
+    <div class="hright">
+      <div class="year-pill">
+        <label><i class="ti ti-calendar-event"></i> Año</label>
+        <select id="year-sel" onchange="changeYear(this.value)"></select>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveNow()" title="Guarda los datos en la nube (Supabase), visible para todo el estudio"><i class="ti ti-device-floppy"></i> <span id="save-lbl">Guardado</span></button>
+      <span class="backup-badge" id="last-save-lbl" title="Ultima vez que se guardo en la nube"></span>
+      <button class="hbtn" onclick="syncNow()" title="Traer los ultimos cambios de otras PCs"><i class="ti ti-refresh"></i> Sincronizar</button>
+      <button class="hbtn" onclick="exportData()"><i class="ti ti-download"></i> Exportar</button>
+      <button class="hbtn" onclick="importData()"><i class="ti ti-upload"></i> Importar</button>
+    </div>
+  </div>
+  <div id="remote-banner" style="display:none;background:#FEEBC8;color:#C05621;border-radius:var(--radius-lg);padding:.6rem 1rem;margin-bottom:1rem;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span><i class="ti ti-alert-triangle"></i> Otra PC guardo cambios nuevos.</span>
+    <button class="btn-sm btn-primary" onclick="syncNow()">Traer cambios ahora</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+    <button class="tab" onclick="showPanel('trabajo',this)"><i class="ti ti-pencil"></i> Cargar trabajo</button>
+    <button class="tab" onclick="showPanel('ejercicios',this)"><i class="ti ti-book"></i> Ejercicios</button>
+    <button class="tab" onclick="showPanel('tiempos',this)"><i class="ti ti-clock"></i> Tiempos</button>
+    <button class="tab" onclick="showPanel('anual',this)"><i class="ti ti-trending-up"></i> Resumen anual</button>
+    <button class="tab" onclick="showPanel('config',this)"><i class="ti ti-settings"></i> Config</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="panel-dashboard" class="panel active">
+      <button onclick="document.getElementById('welcome-banner').style.display='none'" style="background:transparent;border:none;color:#4299E1;padding:0;font-size:16px;flex-shrink:0;cursor:pointer;margin-left:auto">✕</button>
+    </div>
+    <div class="kpi-strip" id="kpi-dash"></div>
+    <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between">
+      <div style="font-size:13px;font-weight:600;color:var(--navy)">Todas las empresas &mdash; <span id="dash-mes-lbl" style="color:var(--accent)"></span></div>
+      <div class="row-gap"><label style="font-size:12px;color:var(--gray)">Mes:</label>
+        <select class="sel" id="dash-mes-sel" onchange="renderDashboard()"></select></div>
+    </div>
+    <div class="emp-grid" id="emp-grid"></div>
+  </div>
+
+  <!-- CARGAR TRABAJO -->
+  <div id="panel-trabajo" class="panel">
+    <div class="work-header">
+      <div class="work-field">
+        <label>Empresa</label>
+        <select class="sel" id="work-emp" onchange="onChangeWorkEmp()" style="font-size:14px;font-weight:600;min-width:200px"></select>
+      </div>
+      <div class="work-field">
+        <label>Mes del ejercicio</label>
+        <div class="mes-pills-wrap" id="mes-pills"></div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:4px" id="work-mes-lbl"></div>
+      </div>
+    </div>
+    <div class="work-grid">
+      <div>
+        <div id="ej-info-bar"></div>
+        <div class="sec-divider"><i class="ti ti-refresh" style="font-size:12px"></i> Tareas rutinarias</div>
+        <div id="tarea-rows"></div>
+        <div class="sec-divider" style="color:var(--purple)"><i class="ti ti-file-check" style="font-size:12px;color:var(--purple)"></i> Tareas de cierre de balance</div>
+        <div id="cierre-rows"></div>
+        <button class="btn-purple btn-sm" style="margin-top:4px" onclick="openCierreModal()"><i class="ti ti-plus"></i> Agregar tarea de cierre</button>
+        <div class="row-gap" style="margin-top:.75rem">
+          <button class="btn-success btn-sm" onclick="marcarTodas('Hecho')"><i class="ti ti-checks"></i> Todas Hecho</button>
+          <button class="btn-warn btn-sm" onclick="marcarTodas('Pendiente')"><i class="ti ti-clock"></i> Todas Pendiente</button>
+        </div>
+      </div>
+      <div>
+        <div class="scard">
+          <div class="scard-title"><i class="ti ti-clock"></i> Cronometro</div>
+          <div class="timer-disp" id="timer-disp">00:00:00</div>
+          <div class="prog-wrap" style="margin-bottom:.5rem"><div class="prog-bar" id="timer-prog" style="width:0%"></div></div>
+          <div class="row-gap" style="margin-bottom:.5rem;gap:5px">
+            <button class="btn-primary btn-sm" id="btn-start" onclick="timerStart()"><i class="ti ti-player-play"></i> Iniciar</button>
+            <button class="btn-sm" id="btn-pause" onclick="timerPause()" disabled><i class="ti ti-player-pause"></i></button>
+            <button class="btn-success btn-sm" id="btn-stop" onclick="timerStop()" disabled><i class="ti ti-check"></i> Guardar</button>
+            <button class="btn-ghost btn-sm" onclick="timerReset()"><i class="ti ti-refresh"></i></button>
+          </div>
+          <div class="frow" style="margin:0">
+            <label>Tarea activa</label>
+            <select class="sel" id="timer-tarea" style="width:100%;font-size:12px;margin-top:3px"></select>
+          </div>
+        </div>
+        <div class="scard">
+          <div class="scard-title"><i class="ti ti-keyboard"></i> Carga manual</div>
+          <div class="row-gap">
+            <select class="sel" id="manual-tarea" style="flex:1;font-size:12px"></select>
+            <input type="number" id="manual-mins" placeholder="min" min="1" max="999" style="width:58px;font-size:13px;padding:5px 6px;border-radius:var(--radius);border:0.5px solid var(--border);text-align:center;font-family:inherit">
+            <button class="btn-success btn-sm" onclick="saveManual()"><i class="ti ti-check"></i></button>
+          </div>
+        </div>
+        <div class="scard" id="work-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EJERCICIOS -->
+  <div id="panel-ejercicios" class="panel">
+    <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Ejercicios por empresa</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Fechas, avance y asientos pendientes</div>
+      </div>
+      <div class="row-gap">
+        <select class="sel" id="ej-filtro" onchange="renderEjercicios()">
+          <option value="todos">Todos</option><option value="urgente">Urgentes</option>
+          <option value="proximo">Proximos</option><option value="ok">En termino</option><option value="sin">Sin ejercicio</option>
+        </select>
+        <button class="btn-primary" onclick="openEjModal()"><i class="ti ti-plus"></i> Nuevo ejercicio</button>
+      </div>
+    </div>
+    <div class="ej-grid" id="ej-grid"></div>
+  </div>
+
+  <!-- TIEMPOS -->
+  <div id="panel-tiempos" class="panel">
+    <div class="kpi-strip" id="kpi-tiempos"></div>
+    <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between;flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:600;color:var(--navy)">Tiempo invertido por empresa</div>
+      <div class="row-gap">
+        <select class="sel" id="tiempo-filtro-mes"></select>
+        <select class="sel" id="tiempo-sort" onchange="renderTiempos()">
+          <option value="total">Mayor tiempo primero</option>
+          <option value="nombre">Orden alfabetico</option>
+        </select>
+      </div>
+    </div>
+    <div class="tiempo-grid" id="tiempo-grid"></div>
+  </div>
+
+  <!-- RESUMEN ANUAL -->
+  <div id="panel-anual" class="panel">
+    <div class="kpi-strip" id="kpi-anual"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start">
+      <div>
+        <div class="sec">Avance por mes &mdash; <span id="anual-yr" style="color:var(--accent)"></span></div>
+        <div class="card" id="anual-bars"></div>
+      </div>
+      <div>
+        <div class="sec">Ranking tiempo por empresa</div>
+        <div class="card" id="anual-emp"></div>
+        <div class="sec" style="margin-top:1rem">Tiempo por tipo de tarea</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="anual-tareas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="panel-config" class="panel">
+    <div class="cfg-grid">
+      <div>
+        <div class="sec" style="margin-top:0">Empresas <span id="emp-count" style="font-weight:400;color:#A0AEC0"></span></div>
+        <div class="cfg-box">
+          <div id="emp-list"></div>
+          <div class="cfg-footer">
+            <input type="text" id="new-emp" placeholder="Nueva empresa" style="flex:1;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit">
+            <button class="btn-primary btn-sm" onclick="addEmpresa()"><i class="ti ti-plus"></i> Agregar</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sec" style="margin-top:0">Tareas rutinarias</div>
+        <div class="cfg-box">
+          <div id="tarea-list"></div>
+          <div class="cfg-footer">
+            <input type="text" id="new-tarea" placeholder="Nueva tarea" style="flex:1;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit">
+            <button class="btn-primary btn-sm" onclick="addTarea()"><i class="ti ti-plus"></i> Agregar</button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:#A0AEC0;margin-top:.4rem">Las tareas de cierre se agregan por empresa desde "Cargar trabajo".</p>
+      </div>
+    </div>
+    <div class="sec" style="margin-top:1.25rem">Anos registrados</div>
+    <div class="year-grid" id="year-grid"></div>
+    <div class="card" style="padding:.85rem 1rem;margin-top:.5rem">
+      <div class="sec" style="margin-top:0">Agregar ano especifico</div>
+      <div class="row-gap">
+        <input type="number" id="new-year" placeholder="Ej: 2024" min="2000" max="2100" style="width:100px;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit">
+        <button class="btn-primary btn-sm" onclick="addYearManual()"><i class="ti ti-plus"></i> Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EJERCICIO -->
+<div class="modal-overlay" id="modal-ej">
+  <div class="modal">
+    <h3 id="modal-ej-title">Nuevo ejercicio</h3>
+    <div class="frow"><label>Empresa</label><select id="ej-emp-sel" style="width:100%"></select></div>
+    <div class="frow"><label>Nombre / numero</label><input type="text" id="ej-numero" placeholder="Ej: Ejercicio N 12 / 2025-2026"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Fecha de inicio</label><input type="date" id="ej-inicio"></div>
+      <div class="frow"><label>Fecha de cierre</label><input type="date" id="ej-cierre"></div>
+    </div>
+    <div class="frow"><label>Observaciones</label><input type="text" id="ej-obs" placeholder="Notas (opcional)"></div>
+    <div class="modal-btns">
+      <button onclick="closeEjModal()">Cancelar</button>
+      <button class="btn-danger" id="ej-del-btn" style="display:none" onclick="deleteEj()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="saveEj()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAREA CIERRE -->
+<div class="modal-overlay" id="modal-cierre">
+  <div class="modal">
+    <h3 id="modal-cierre-title">Tarea de cierre</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem" id="modal-cierre-emp"></div>
+    <div class="frow"><label>Nombre de la tarea</label>
+      <input type="text" id="cierre-nombre" placeholder="Ej: Ajuste por inflacion, Amortizacion..."></div>
+    <div class="frow"><label>Descripcion (opcional)</label>
+      <textarea id="cierre-desc" rows="2" placeholder="Detalle adicional..."></textarea></div>
+    <div class="modal-btns">
+      <button onclick="closeCierreModal()">Cancelar</button>
+      <button class="btn-danger" id="cierre-del-btn" style="display:none" onclick="deleteCierre()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="saveCierre()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="save-indicator" id="save-indicator"></div>
+
+<script>
+// ═══ CONSTANTES ═══
+const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+// ESTADOS: sin vacío — solo rotan entre los 3
+const ESTADOS_CICLO=["Hecho","Pendiente","No Corresponde"];
+const HOY=new Date(); HOY.setHours(0,0,0,0);
+const ANO_ACTUAL=HOY.getFullYear();
+const MES_ACTUAL=HOY.getMonth();
+
+let EMPRESAS=["STORAGE S.R.L","SINDICATO L","PROVIMED S.R.L","GOLOSINAS NATY","ILS S.R.L","MEDICINA FETAL S.R.L","COOPERATIVA MI BOLIVIA","COOPERATIVA AUREN","SUSTANSA S.R.L","Empresa 10","Empresa 11","Empresa 12","Empresa 13","Empresa 14","Empresa 15","Empresa 16","Empresa 17","Empresa 18","Empresa 19","Empresa 20","Empresa 21","Empresa 22","Empresa 23","Empresa 24","Empresa 25"];
+let TAREAS=["Compras","Ventas","IVA","IIBB","Seg. e Hig.","Sueldos","Concil. Bco"];
+let activePanel='dashboard';
+let activeYear=ANO_ACTUAL;
+let workEmpIdx=0, workMes=MES_ACTUAL, workMesYear=ANO_ACTUAL;
+let editingEjIdx=null, editingCierreEmpIdx=null, editingCierreIdx=null;
+let hasUnsavedChanges=false;
+let autoBackupTimer=null;
+let idbDB=null;
+
+let data={empresas:[],tareas_nombres:[],anos:{},ejercicios:[]};
+
+// ═══ CONFIG SUPABASE ═══
+// Completa estos 2 datos con los de tu proyecto (Settings > API en supabase.com)
+const SUPABASE_URL = "https://ovmtacwcrxfxtxsggbxt.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_llgiKHW2EOOTiP4haWewFg_Vubpj01W";
+const ROW_ID = "estudio"; // fila unica compartida por todo el estudio
+let sb = null;
+let lastKnownUpdatedAt = null;
+let applyingRemote = false;
+function sbReady(){
+  if(sb)return true;
+  if(!SUPABASE_URL||SUPABASE_URL.startsWith('PEGA_AQUI')){
+    toast('Falta configurar Supabase (mira las lineas SUPABASE_URL/ANON_KEY en el codigo)',true);
+    return false;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return true;
+}
+
+let saveDebounce=null;
+
+function markUnsaved(){
+  if(applyingRemote)return; // no marcar "sin guardar" cuando el cambio vino de otra PC
+  hasUnsavedChanges=true;
+  const btn=document.getElementById('save-btn');
+  if(btn){btn.className='save-btn unsaved';document.getElementById('save-lbl').textContent='Guardar cambios';}
+  clearTimeout(saveDebounce);
+  saveDebounce=setTimeout(()=>saveNow(true),5000);
+}
+
+async function saveNow(silent=false){
+  clearTimeout(saveDebounce);
+  if(!sbReady())return;
+  const btn=document.getElementById('save-btn');
+  if(!silent&&btn){btn.className='save-btn saving';document.getElementById('save-lbl').textContent='Guardando...';}
+  data.empresas=[...EMPRESAS];data.tareas_nombres=[...TAREAS];
+  const nowIso=new Date().toISOString();
+  const {error}=await sb.from('tablero').upsert({id:ROW_ID,data:data,updated_at:nowIso});
+  if(error){
+    if(btn){btn.className='save-btn unsaved';document.getElementById('save-lbl').textContent='Error al guardar';}
+    toast('No se pudo guardar en la nube: '+error.message,true);
+    return;
+  }
+  lastKnownUpdatedAt=nowIso;
+  hasUnsavedChanges=false;
+  const ahora=new Date();
+  const hora=`${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+  if(btn){btn.className='save-btn saved';document.getElementById('save-lbl').textContent='Guardado';}
+  document.getElementById('last-save-lbl').textContent=`Guardado: ${hora}`;
+  if(!silent)showSaveIndicator(`Guardado a las ${hora}`);
+}
+function showSaveIndicator(msg){
+  const el=document.getElementById('save-indicator');
+  el.textContent='✓ '+msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+function startAutoBackup(){
+  clearInterval(autoBackupTimer);
+  autoBackupTimer=setInterval(()=>{ if(hasUnsavedChanges) saveNow(true); },2*60*1000);
+}
+
+// ═══ CARGA DATOS DESDE SUPABASE ═══
+async function loadData(){
+  let loaded=null;
+  if(sbReady()){
+    const {data:rows,error}=await sb.from('tablero').select('data,updated_at').eq('id',ROW_ID).maybeSingle();
+    if(error){
+      toast('No se pudo conectar a Supabase: '+error.message,true);
+    } else if(rows){
+      loaded=rows.data;
+      lastKnownUpdatedAt=rows.updated_at;
+    }
+  }
+  if(loaded)data=loaded;
+  if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
+  if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
+  if(!data.ejercicios)data.ejercicios=[];
+  if(!data.anos)data.anos={};
+  if(!data.anos[ANO_ACTUAL])data.anos[ANO_ACTUAL]={tareas:{},tiempos:[]};
+  data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];});
+  if(!loaded){
+    // primera vez: creamos la fila en Supabase
+    await saveNow(true);
+  }
+}
+
+// ═══ SINCRONIZAR CON OTRAS PCs ═══
+async function syncNow(){
+  if(!sbReady())return;
+  document.getElementById('remote-banner').style.display='none';
+  applyingRemote=true;
+  await loadData();
+  init();renderAll();renderConfig();
+  applyingRemote=false;
+  toast('Datos actualizados');
+}
+function suscribirCambiosRemotos(){
+  if(!sbReady())return;
+  sb.channel('tablero-cambios')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'tablero',filter:`id=eq.${ROW_ID}`},(payload)=>{
+      const nuevo=payload.new && payload.new.updated_at;
+      if(nuevo && nuevo!==lastKnownUpdatedAt){
+        document.getElementById('remote-banner').style.display='flex';
+      }
+    })
+    .subscribe();
+}
+
+function getYD(y){if(!data.anos[y])data.anos[y]={tareas:{},tiempos:[]};return data.anos[y];}
+function getYears(){return Object.keys(data.anos).map(Number).sort();}
+
+// ═══ BACKUP MANUAL (archivo .json, ademas de la nube) ═══
+function exportData(){
+  data.empresas=[...EMPRESAS];data.tareas_nombres=[...TAREAS];
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`tablero_backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+  toast('Backup descargado');
+}
+function importData(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='application/json';
+  inp.onchange=async ()=>{
+    const file=inp.files[0];if(!file)return;
+    try{
+      const text=await file.text();
+      const imp=JSON.parse(text);
+      const src=imp.anos||imp.años;
+      if(src){data=imp;if(!data.anos&&data.años){data.anos={};Object.entries(data.años).forEach(([y,v])=>data.anos[y]=v);}}
+      else if(imp.tareas){data={anos:{},ejercicios:[]};data.anos[ANO_ACTUAL]={tareas:imp.tareas,tiempos:imp.tiempos||[]};if(imp.empresas)data.empresas=imp.empresas;if(imp.tareas_nombres)data.tareas_nombres=imp.tareas_nombres;}
+      else throw 0;
+      if(!data.ejercicios)data.ejercicios=[];
+      data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];});
+      if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
+      if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
+      await saveNow();init();renderAll();renderConfig();toast('Datos importados y guardados en la nube');
+    }catch{toast('Archivo invalido',true);}
+  };
+  inp.click();
+}
+
+// ═══ AVISO AL CERRAR ═══
+window.addEventListener('beforeunload',e=>{
+  if(hasUnsavedChanges){
+    e.preventDefault();e.returnValue='';
+  }
+});
+
+// ═══ AÑOS ═══
+function buildYearSel(){const s=document.getElementById('year-sel');s.innerHTML='';getYears().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;if(y===activeYear)o.selected=true;s.appendChild(o);});}
+function changeYear(y){activeYear=parseInt(y);renderAll();}
+function addYearManual(){const inp=document.getElementById('new-year');const y=parseInt(inp.value);if(!y||y<2000||y>2100){toast('Ano invalido',true);return;}if(data.anos[y]){toast(`El ano ${y} ya existe`);return;}data.anos[y]={tareas:{},tiempos:[]};markUnsaved();activeYear=y;buildYearSel();renderAll();renderConfig();inp.value='';toast(`Ano ${y} agregado`);}
+function deleteYear(y){if(getYears().length<=1){toast('No podes eliminar el unico ano',true);return;}if(!confirm(`Eliminar el ano ${y} y todos sus datos?`))return;delete data.anos[y];if(activeYear===parseInt(y))activeYear=Math.max(...getYears());markUnsaved();saveNow();buildYearSel();document.getElementById('year-sel').value=activeYear;renderAll();renderConfig();toast(`Ano ${y} eliminado`);}
+
+// ═══ HELPERS ═══
+function key(m,e,t){return`${m}_${e}_${t}`;}
+function getE(m,e,t,yr){return(getYD(yr||activeYear).tareas[key(m,e,t)])||'';}
+function setE(m,e,t,v,yr){getYD(yr||activeYear).tareas[key(m,e,t)]=v;markUnsaved();}
+function getCierreE(m,ejIdx,ci,yr){return(getYD(yr||activeYear).tareas[`${m}_cierre_${ejIdx}_${ci}`])||'';}
+function setCierreE(m,ejIdx,ci,v,yr){getYD(yr||activeYear).tareas[`${m}_cierre_${ejIdx}_${ci}`]=v;markUnsaved();}
+// ciclar estado OBLIGATORIO: Hecho -> Pendiente -> N/C -> Hecho (sin vacío)
+function ciclarEstado(actual){
+  if(!actual||actual==='')return'Pendiente'; // primera vez: pendiente
+  const idx=ESTADOS_CICLO.indexOf(actual);
+  return ESTADOS_CICLO[(idx+1)%3];
+}
+function pctEmpMesYr(m,e,yr){let d=0,nc=0;for(let t=0;t<TAREAS.length;t++){const s=getE(m,e,t,yr);if(s==='Hecho')d++;else if(s==='No Corresponde')nc++;}const den=TAREAS.length-nc;return den<=0?1:d/den;}
+function pctMes(m){let s=0;for(let e=0;e<EMPRESAS.length;e++)s+=pctEmpMesYr(m,e,activeYear);return s/EMPRESAS.length;}
+function countMes(m,est){let c=0;for(let e=0;e<EMPRESAS.length;e++)for(let t=0;t<TAREAS.length;t++)if(getE(m,e,t)===est)c++;return c;}
+function tiemposYr(yr){return getYD(yr||activeYear).tiempos||[];}
+function totalMinsEmpMesYr(e,m,yr){return tiemposYr(yr).filter(r=>r.emp===e&&r.mes===m).reduce((a,r)=>a+r.mins,0);}
+function totalMinsEmpYr(e,yr){return tiemposYr(yr).filter(r=>r.emp===e).reduce((a,r)=>a+r.mins,0);}
+function totalMinsMesYr(m,yr){return tiemposYr(yr).filter(r=>r.mes===m).reduce((a,r)=>a+r.mins,0);}
+function totalMinsTareaYr(t,yr){return tiemposYr(yr).filter(r=>r.tarea===t&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);}
+function totalMinsCierreYr(yr){return tiemposYr(yr).filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);}
+function totalMinsRutinariaYr(yr){return tiemposYr(yr).filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);}
+function totalMinsAll(yr){return tiemposYr(yr).reduce((a,r)=>a+r.mins,0);}
+function fmtMin(m){if(!m||m===0)return'--';if(m<60)return m+'m';const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
+function parseDate(iso){if(!iso)return null;const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtDate(iso){if(!iso)return'';return parseDate(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function diasRestantes(iso){if(!iso)return null;return Math.round((parseDate(iso)-HOY)/864e5);}
+function getMesesEj(ej){
+  if(!ej||!ej.inicio||!ej.cierre)return null;
+  const ini=parseDate(ej.inicio),cie=parseDate(ej.cierre);
+  const res=[];let cur=new Date(ini.getFullYear(),ini.getMonth(),1);
+  const fin=new Date(cie.getFullYear(),cie.getMonth(),1);
+  while(cur<=fin&&res.length<=24){res.push({mes:cur.getMonth(),anio:cur.getFullYear()});cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);}
+  return res;
+}
+function toast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.background=err?'#742A2A':'#1A202C';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function badgeCls(p){return p>=1?'b100':p>=.75?'b75':p>.05?'b50':'b0';}
+function estadoClass(est){return est==='Hecho'?'tr-hecho':est==='Pendiente'?'tr-pendiente':est==='No Corresponde'?'tr-nc':'';}
+
+// ═══ DASHBOARD ═══
+function buildDashMesSel(){const s=document.getElementById('dash-mes-sel');s.innerHTML='';MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});s.value=MES_ACTUAL;}
+function renderDashboard(){
+  const mes=parseInt(document.getElementById('dash-mes-sel').value);
+  document.getElementById('dash-mes-lbl').textContent=`${MESES[mes]} ${activeYear}`;
+  const h=countMes(mes,'Hecho'),p=countMes(mes,'Pendiente'),nc=countMes(mes,'No Corresponde');
+  const pct=pctMes(mes),mins=totalMinsMesYr(mes,activeYear),totalAnio=totalMinsAll(activeYear);
+  const comp=EMPRESAS.filter((_,ei)=>Math.round(pctEmpMesYr(mes,ei,activeYear)*100)===100).length;
+  const urg=data.ejercicios.filter(ej=>{const d=diasRestantes(ej.cierre);return d!==null&&d>=0&&d<=30;}).length;
+  document.getElementById('kpi-dash').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Empresas</div><div class="kpi-val">${EMPRESAS.length}</div><div class="kpi-sub">${comp} completadas</div></div>
+    <div class="kpi"><div class="kpi-label">Hechas</div><div class="kpi-val" style="color:var(--green2)">${h}</div><div class="kpi-sub">${MESES[mes]}</div></div>
+    <div class="kpi"><div class="kpi-label">Pendientes</div><div class="kpi-val" style="color:var(--red)">${p}</div></div>
+    <div class="kpi"><div class="kpi-label">Avance mes</div><div class="kpi-val" style="color:var(--accent)">${Math.round(pct*100)}%</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.round(pct*100)}%"></div></div></div>
+    <div class="kpi"><div class="kpi-label">Tiempo este mes</div><div class="kpi-val">${fmtMin(mins)}</div></div>
+    <div class="kpi"><div class="kpi-label">Tiempo total ${activeYear}</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(totalAnio)}</div></div>
+    ${urg?`<div class="kpi" style="border-color:#FC8181"><div class="kpi-label" style="color:var(--red)">Ejercicios urgentes</div><div class="kpi-val" style="color:var(--red)">${urg}</div><div class="kpi-sub">cierre en 30 dias</div></div>`:''}
+  `;
+  const grid=document.getElementById('emp-grid');grid.innerHTML='';
+  EMPRESAS.forEach((emp,ei)=>{
+    const pctE=pctEmpMesYr(mes,ei,activeYear),w=Math.round(pctE*100);
+    const minsM=totalMinsEmpMesYr(ei,mes,activeYear),minsA=totalMinsEmpYr(ei,activeYear);
+    const ej=data.ejercicios.find(e=>e.emp===ei);
+    const diasC=ej?diasRestantes(ej.cierre):null;
+    const dots=TAREAS.map((_,t)=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
+    let ejHtml='';
+    if(ej&&diasC!==null){const ec=diasC<0?'color:var(--red)':diasC<=30?'color:var(--orange)':'color:var(--green)';const et=diasC<0?`Vencido hace ${Math.abs(diasC)}d`:diasC===0?'Vence hoy':`${diasC}d para cierre`;ejHtml=`<div style="font-size:10px;${ec};font-weight:600;margin-top:2px">${ej.numero} · ${et}</div>`;}
+    const card=document.createElement('div');card.className='emp-card'+(w===100?' complete':'');
+    card.innerHTML=`
+      <div class="emp-card-top"><div><div class="emp-name">${emp}</div>${ejHtml}</div><span class="emp-badge ${badgeCls(pctE)}">${w}%</span></div>
+      <div class="tarea-dots">${dots}</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${w}%"></div></div>
+      <div class="emp-footer"><span>Mes: <strong>${fmtMin(minsM)}</strong></span><span>Ano total: <strong>${fmtMin(minsA)}</strong></span></div>`;
+    card.addEventListener('click',()=>openTrabajo(ei,mes,activeYear));
+    grid.appendChild(card);
+  });
+}
+
+// ═══ CARGAR TRABAJO ═══
+function buildWorkEmpSel(){const s=document.getElementById('work-emp');s.innerHTML='';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});s.value=workEmpIdx;}
+function openTrabajo(empIdx,mes,anio){workEmpIdx=empIdx;workMes=mes;workMesYear=anio||activeYear;showPanel('trabajo',document.querySelectorAll('.tab')[1]);document.getElementById('work-emp').value=empIdx;renderTrabajo();}
+function onChangeWorkEmp(){
+  workEmpIdx=parseInt(document.getElementById('work-emp').value);
+  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
+  const meses=getMesesEj(ej)||[{mes:MES_ACTUAL,anio:activeYear}];
+  workMes=meses[0].mes;workMesYear=meses[0].anio;renderTrabajo();
+}
+function renderTrabajo(){
+  workEmpIdx=parseInt(document.getElementById('work-emp').value);
+  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
+  const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
+  const mesesList=getMesesEj(ej)||MESES.map((_,i)=>({mes:i,anio:activeYear}));
+  // PILLS
+  const pillsDiv=document.getElementById('mes-pills');pillsDiv.innerHTML='';
+  mesesList.forEach(({mes,anio})=>{
+    const pct=pctEmpMesYr(mes,workEmpIdx,anio);
+    const cls=pct>=1?'mp-ok':pct>0?'mp-wip':'mp-empty';
+    const isActive=mes===workMes&&anio===workMesYear;
+    const pill=document.createElement('span');
+    pill.className='mes-pill '+cls+(isActive?' active':'');
+    const yrSuffix=anio!==activeYear?` '${String(anio).slice(2)}`:'';
+    pill.textContent=MESES[mes].slice(0,3)+yrSuffix;
+    pill.title=`${MESES[mes]} ${anio}`;
+    pill.onclick=()=>{workMes=mes;workMesYear=anio;renderTrabajo();};
+    pillsDiv.appendChild(pill);
+  });
+  document.getElementById('work-mes-lbl').textContent=`${MESES[workMes]} ${workMesYear}`;
+  // EJ INFO
+  const ejDiv=document.getElementById('ej-info-bar');
+  if(ej){const d=diasRestantes(ej.cierre);const cls=d<0?'ej-danger':d<=30?'ej-warn':'ej-ok';ejDiv.innerHTML=`<div class="ej-info-bar ${cls}">${ej.numero} | Cierre: ${fmtDate(ej.cierre)} | ${d<0?`Vencido hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Faltan ${d} dias`}</div>`;}
+  else ejDiv.innerHTML=`<div style="font-size:11px;color:#A0AEC0;margin-bottom:.6rem">Sin ejercicio. <span style="color:var(--accent);cursor:pointer" onclick="showPanel('ejercicios',document.querySelectorAll('.tab')[2])">Agregar →</span></div>`;
+  renderTareaRows(ejIdx);
+  renderCierreRows(ej,ejIdx);
+  renderWorkStats();
+  buildTareaSels(ej,ejIdx);
+}
+
+function renderTareaRows(ejIdx){
+  const div=document.getElementById('tarea-rows');div.innerHTML='';
+  TAREAS.forEach((tarea,ti)=>{
+    const est=getE(workMes,workEmpIdx,ti,workMesYear);
+    const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+    const minsA=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+    const row=document.createElement('div');row.className=`tarea-row ${estadoClass(est)}`;
+    // botones siempre visibles, el activo resaltado
+    row.innerHTML=`
+      <span class="tarea-name">${tarea}</span>
+      <div class="estado-btns">
+        <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoWork(${ti},'Hecho')">✅ Hecho</button>
+        <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoWork(${ti},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoWork(${ti},'No Corresponde')">— N/C</button>
+      </div>
+      <div class="tarea-time-area">
+        <input type="number" class="mins-inp" id="mins-r-${ti}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('rutinaria',${ti});this.value='';}">
+        <button class="btn-success btn-sm" onclick="addMinsRow('rutinaria',${ti})"><i class="ti ti-plus"></i></button>
+        <span class="tarea-acum">Mes:<b>${fmtMin(minsM)}</b> Ano:<b>${fmtMin(minsA)}</b></span>
+      </div>`;
+    div.appendChild(row);
+  });
+}
+
+function renderCierreRows(ej,ejIdx){
+  const div=document.getElementById('cierre-rows');div.innerHTML='';
+  if(!ej||!ej.tareascierre||!ej.tareascierre.length){div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">No hay tareas de cierre. Agrega las que correspondan a esta empresa.</div>';return;}
+  ej.tareascierre.forEach((tc,ci)=>{
+    const est=getCierreE(workMes,ejIdx,ci,workMesYear);
+    const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0);
+    const minsA=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0);
+    const row=document.createElement('div');row.className=`tarea-row tr-cierre ${estadoClass(est)}`;
+    row.innerHTML=`
+      <span class="tarea-name">${tc.nombre}<span class="tarea-type tt-cierre">CIERRE</span></span>
+      <div class="estado-btns">
+        <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'Hecho')">✅ Hecho</button>
+        <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'No Corresponde')">— N/C</button>
+      </div>
+      <div class="tarea-time-area">
+        <input type="number" class="mins-inp" id="mins-c-${ci}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('cierre',${ci});this.value='';}">
+        <button class="btn-success btn-sm" onclick="addMinsRow('cierre',${ci})"><i class="ti ti-plus"></i></button>
+        <button class="btn-ghost btn-sm" onclick="openCierreModal(${ejIdx},${ci})"><i class="ti ti-pencil"></i></button>
+        <span class="tarea-acum">Mes:<b>${fmtMin(minsM)}</b> Ano:<b>${fmtMin(minsA)}</b></span>
+      </div>`;
+    div.appendChild(row);
+  });
+}
+
+function setEstadoWork(ti,estado){
+  setE(workMes,workEmpIdx,ti,estado,workMesYear);
+  // redibujar solo la fila
+  const div=document.getElementById('tarea-rows');
+  if(div)renderTareaRows(data.ejercicios.findIndex(e=>e.emp===workEmpIdx));
+  renderWorkStats();refreshActivePill();
+}
+function setEstadoCierre(ejIdx,ci,estado){
+  setCierreE(workMes,ejIdx,ci,estado,workMesYear);
+  const ej=data.ejercicios[ejIdx];renderCierreRows(ej,ejIdx);renderWorkStats();
+}
+function refreshActivePill(){
+  document.querySelectorAll('.mes-pill').forEach(p=>{
+    if(p.classList.contains('active')){const pct=pctEmpMesYr(workMes,workEmpIdx,workMesYear);p.className='mes-pill active '+(pct>=1?'mp-ok':pct>0?'mp-wip':'mp-empty');}
+  });
+}
+function marcarTodas(estado){
+  for(let t=0;t<TAREAS.length;t++)setE(workMes,workEmpIdx,t,estado,workMesYear);
+  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
+  const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
+  if(ej&&ej.tareascierre)ej.tareascierre.forEach((_,ci)=>setCierreE(workMes,ejIdx,ci,estado,workMesYear));
+  markUnsaved();renderTareaRows(ejIdx);renderCierreRows(ej,ejIdx);renderWorkStats();toast(`Todas marcadas: ${estado}`);
+}
+function addMinsRow(tipo,idx){
+  const inp=document.getElementById(tipo==='cierre'?`mins-c-${idx}`:`mins-r-${idx}`);
+  const mins=parseInt(inp.value);
+  if(!mins||mins<1){toast('Ingresa minutos validos',true);return;}
+  saveTimeRec(mins,'manual',workEmpIdx,idx,workMes,workMesYear,tipo);inp.value='';
+}
+function buildTareaSels(ej,ejIdx){
+  const ops=[...TAREAS.map((t,i)=>({label:t,tipo:'rutinaria',idx:i})),...(ej&&ej.tareascierre?ej.tareascierre.map((tc,i)=>({label:`[CIERRE] ${tc.nombre}`,tipo:'cierre',idx:i})):[])];
+  ['timer-tarea','manual-tarea'].forEach(id=>{const s=document.getElementById(id);s.innerHTML='';ops.forEach(op=>{const o=document.createElement('option');o.value=JSON.stringify({tipo:op.tipo,idx:op.idx});o.textContent=op.label;s.appendChild(o);});});
+}
+function renderWorkStats(){
+  const minsA=totalMinsEmpYr(workEmpIdx,workMesYear);
+  const minsM=totalMinsEmpMesYr(workEmpIdx,workMes,workMesYear);
+  const minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+  const minsCie=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+  const mesConDatos=MESES.map((_,m)=>totalMinsEmpMesYr(workEmpIdx,m,workMesYear)).filter(m=>m>0);
+  const estim=mesConDatos.length?Math.round(mesConDatos.reduce((a,b)=>a+b,0)/mesConDatos.length*12):0;
+  document.getElementById('work-stats').innerHTML=`
+    <div class="scard-title"><i class="ti ti-chart-bar"></i> Tiempos — ${EMPRESAS[workEmpIdx]}</div>
+    <div class="stat-row"><span>Este mes (${MESES[workMes]})</span><span class="stat-val">${fmtMin(minsM)}</span></div>
+    <div class="stat-row"><span>Total ${workMesYear}</span><span class="stat-val">${fmtMin(minsA)}</span></div>
+    <div class="stat-row"><span>Rutinarias</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
+    <div class="stat-row"><span>Tareas de cierre</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsCie)}</span></div>
+    ${estim?`<div class="stat-row"><span>Estimado ejercicio</span><span class="stat-val" style="color:var(--accent)">~${fmtMin(estim)}</span></div>`:''}
+  `;
+}
+
+// ═══ CRONOMETRO ═══
+let timerInt=null,timerSec=0,timerOn=false;
+function tickTimer(){timerSec++;updTimer();}
+function updTimer(){const h=Math.floor(timerSec/3600),mn=Math.floor((timerSec%3600)/60),s=timerSec%60;document.getElementById('timer-disp').textContent=`${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}:${String(s).padStart(2,'0')}`;document.getElementById('timer-prog').style.width=Math.min((timerSec/3600)*100,100)+'%';}
+function timerStart(){if(timerOn)return;timerOn=true;timerInt=setInterval(tickTimer,1000);document.getElementById('btn-start').disabled=true;document.getElementById('btn-pause').disabled=false;document.getElementById('btn-stop').disabled=false;}
+function timerPause(){if(!timerOn)return;clearInterval(timerInt);timerOn=false;document.getElementById('btn-start').disabled=false;document.getElementById('btn-pause').disabled=true;}
+function timerStop(){clearInterval(timerInt);timerOn=false;const mins=Math.max(1,Math.round(timerSec/60));const val=JSON.parse(document.getElementById('timer-tarea').value||'{"tipo":"rutinaria","idx":0}');saveTimeRec(mins,'cronometro',workEmpIdx,val.idx,workMes,workMesYear,val.tipo);timerSec=0;updTimer();document.getElementById('btn-start').disabled=false;document.getElementById('btn-pause').disabled=true;document.getElementById('btn-stop').disabled=true;}
+function timerReset(){clearInterval(timerInt);timerOn=false;timerSec=0;updTimer();document.getElementById('btn-start').disabled=false;document.getElementById('btn-pause').disabled=true;document.getElementById('btn-stop').disabled=true;}
+function saveManual(){const mins=parseInt(document.getElementById('manual-mins').value);if(!mins||mins<1){toast('Cantidad invalida',true);return;}const val=JSON.parse(document.getElementById('manual-tarea').value||'{"tipo":"rutinaria","idx":0}');saveTimeRec(mins,'manual',workEmpIdx,val.idx,workMes,workMesYear,val.tipo);document.getElementById('manual-mins').value='';}
+function saveTimeRec(mins,origen,empIdx,tareaIdx,mes,anio,tipo){
+  const yr=anio||activeYear;const yd=getYD(yr);if(!yd.tiempos)yd.tiempos=[];
+  yd.tiempos.push({mes,emp:empIdx,tarea:tareaIdx,mins,tipo:tipo||'rutinaria',origen,fecha:new Date().toISOString().slice(0,10)});
+  markUnsaved();toast(`${fmtMin(mins)} guardados`);
+  if(activePanel==='trabajo'){const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);const ejIdx=ej?data.ejercicios.indexOf(ej):-1;renderTareaRows(ejIdx);renderCierreRows(ej,ejIdx);renderWorkStats();}
+}
+
+// ═══ MODAL TAREAS CIERRE ═══
+function openCierreModal(ejIdx=null,ci=null){
+  const empIdx=workEmpIdx;const ej=ejIdx!==null?data.ejercicios[ejIdx]:data.ejercicios.find(e=>e.emp===empIdx);
+  if(!ej){toast('Esta empresa no tiene ejercicio. Agrega uno primero.',true);return;}
+  editingCierreEmpIdx=data.ejercicios.indexOf(ej);editingCierreIdx=ci;
+  document.getElementById('modal-cierre-title').textContent=ci!==null?'Editar tarea de cierre':'Nueva tarea de cierre';
+  document.getElementById('modal-cierre-emp').textContent=`${EMPRESAS[ej.emp]} · ${ej.numero}`;
+  document.getElementById('cierre-del-btn').style.display=ci!==null?'inline-flex':'none';
+  document.getElementById('cierre-nombre').value=ci!==null?ej.tareascierre[ci].nombre:'';
+  document.getElementById('cierre-desc').value=ci!==null?(ej.tareascierre[ci].desc||''):'';
+  document.getElementById('modal-cierre').classList.add('open');
+}
+function closeCierreModal(){document.getElementById('modal-cierre').classList.remove('open');editingCierreEmpIdx=null;editingCierreIdx=null;}
+function saveCierre(){
+  const nombre=document.getElementById('cierre-nombre').value.trim();const desc=document.getElementById('cierre-desc').value.trim();
+  if(!nombre){toast('Ingresa un nombre',true);return;}
+  const ej=data.ejercicios[editingCierreEmpIdx];if(!ej.tareascierre)ej.tareascierre=[];
+  if(editingCierreIdx!==null){ej.tareascierre[editingCierreIdx].nombre=nombre;ej.tareascierre[editingCierreIdx].desc=desc;}
+  else ej.tareascierre.push({nombre,desc});
+  markUnsaved();saveNow();closeCierreModal();renderTrabajo();toast('Tarea de cierre guardada');
+}
+function deleteCierre(){
+  if(!confirm('Eliminar esta tarea de cierre?'))return;
+  data.ejercicios[editingCierreEmpIdx].tareascierre.splice(editingCierreIdx,1);
+  markUnsaved();saveNow();closeCierreModal();renderTrabajo();toast('Eliminada');
+}
+
+// ═══ EJERCICIOS ═══
+function openEjModal(idx=null){
+  editingEjIdx=idx;
+  document.getElementById('modal-ej-title').textContent=idx===null?'Nuevo ejercicio':'Editar ejercicio';
+  document.getElementById('ej-del-btn').style.display=idx!==null?'inline-flex':'none';
+  const sel=document.getElementById('ej-emp-sel');sel.innerHTML='';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;sel.appendChild(o);});
+  if(idx!==null){const ej=data.ejercicios[idx];sel.value=ej.emp;document.getElementById('ej-numero').value=ej.numero||'';document.getElementById('ej-inicio').value=ej.inicio||'';document.getElementById('ej-cierre').value=ej.cierre||'';document.getElementById('ej-obs').value=ej.obs||'';}
+  else{sel.value=0;['ej-numero','ej-inicio','ej-cierre','ej-obs'].forEach(id=>document.getElementById(id).value='');}
+  document.getElementById('modal-ej').classList.add('open');
+}
+function closeEjModal(){document.getElementById('modal-ej').classList.remove('open');editingEjIdx=null;}
+function saveEj(){
+  const emp=parseInt(document.getElementById('ej-emp-sel').value);const numero=document.getElementById('ej-numero').value.trim();
+  const inicio=document.getElementById('ej-inicio').value;const cierre=document.getElementById('ej-cierre').value;const obs=document.getElementById('ej-obs').value.trim();
+  if(!numero){toast('Ingresa un nombre',true);return;}if(!inicio||!cierre){toast('Ingresa fechas',true);return;}if(inicio>=cierre){toast('El cierre debe ser posterior al inicio',true);return;}
+  const ej={emp,numero,inicio,cierre,obs,tareascierre:[]};
+  if(editingEjIdx!==null){ej.tareascierre=data.ejercicios[editingEjIdx].tareascierre||[];data.ejercicios[editingEjIdx]=ej;}
+  else data.ejercicios.push(ej);
+  markUnsaved();saveNow();closeEjModal();renderEjercicios();toast('Ejercicio guardado');
+}
+function deleteEj(){if(editingEjIdx===null)return;if(!confirm('Eliminar este ejercicio?'))return;data.ejercicios.splice(editingEjIdx,1);markUnsaved();saveNow();closeEjModal();renderEjercicios();toast('Eliminado');}
+function renderEjercicios(){
+  const filtro=document.getElementById('ej-filtro').value;const grid=document.getElementById('ej-grid');grid.innerHTML='';
+  data.ejercicios.forEach((ej,idx)=>{
+    const d=diasRestantes(ej.cierre);const venc=d!==null&&d<0,urg=d!==null&&d>=0&&d<=30,prox=d!==null&&d>30&&d<=90;
+    if(filtro==='urgente'&&!venc&&!urg)return;if(filtro==='proximo'&&!prox)return;if(filtro==='ok'&&(venc||urg||prox))return;if(filtro==='sin')return;
+    const cls=venc||urg?'ec-danger':prox?'ec-warn':'ec-ok';
+    const mesesEj=getMesesEj(ej)||[];
+    let hh=0,tot=0;mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){const est=getE(mes,ej.emp,t,anio);if(est!==''&&est!=='No Corresponde'){tot++;if(est==='Hecho')hh++;}}});
+    const pct=tot?Math.round(hh/tot*100):0;
+    const pend=[];mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){if(getE(mes,ej.emp,t,anio)==='Pendiente')pend.push(`${MESES[mes].slice(0,3)}·${TAREAS[t]}`);}});
+    const cierrePend=(ej.tareascierre||[]).filter((_,ci)=>mesesEj.some(({mes,anio})=>getCierreE(mes,idx,ci,anio)==='Pendiente'));
+    const minsTotal=mesesEj.reduce((a,{mes,anio})=>a+totalMinsEmpMesYr(ej.emp,mes,anio),0);
+    const diasHtml=d!==null?`<div class="ej-dias ${venc||urg?'dias-danger':prox?'dias-warn':'dias-ok'}">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
+    grid.innerHTML+=`<div class="ej-card ${cls}">
+      <button class="btn-ghost btn-sm" style="position:absolute;top:7px;right:7px;padding:3px 7px" onclick="openEjModal(${idx})"><i class="ti ti-pencil"></i></button>
+      <div class="ej-emp">${EMPRESAS[ej.emp]||'?'}</div><div class="ej-num">${ej.numero}</div>
+      <div class="ej-dates">Inicio: <strong>${fmtDate(ej.inicio)}</strong> &nbsp; Cierre: <strong>${fmtDate(ej.cierre)}</strong></div>
+      ${diasHtml}
+      ${tot?`<div style="margin:.5rem 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--gray)">Avance rutinarias</span><span style="font-weight:700">${pct}%</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct===100?'var(--green2)':pct>60?'var(--accent)':'var(--orange)'}"></div></div></div>`:''}
+      ${pend.length?`<div style="margin-top:.3rem">${pend.map(p=>`<span class="ej-tag">${p}</span>`).join('')}</div>`:''}
+      ${cierrePend.length?`<div style="margin-top:.3rem">${cierrePend.map(tc=>`<span class="ej-tag" style="background:var(--purplel);color:var(--purple)">${tc.nombre}</span>`).join('')}</div>`:''}
+      ${!pend.length&&!cierrePend.length&&tot?`<div style="font-size:11px;color:var(--green);margin-top:.3rem">Sin pendientes</div>`:''}
+      <div style="font-size:11px;color:var(--gray);margin-top:.4rem">Tiempo total: <strong>${fmtMin(minsTotal)||'--'}</strong></div>
+      ${ej.tareascierre&&ej.tareascierre.length?`<div style="font-size:10px;color:var(--purple);margin-top:.2rem">${ej.tareascierre.length} tarea(s) de cierre</div>`:''}
+      ${ej.obs?`<div style="font-size:11px;color:var(--gray);margin-top:.3rem;font-style:italic">${ej.obs}</div>`:''}
+    </div>`;
+  });
+  if(filtro==='todos'||filtro==='sin'){
+    const conEj=new Set(data.ejercicios.map(e=>e.emp));
+    EMPRESAS.forEach((emp,ei)=>{if(conEj.has(ei))return;grid.innerHTML+=`<div class="ej-card ec-nuevo" onclick="openEjModal();document.getElementById('ej-emp-sel').value=${ei}"><div class="ej-emp" style="color:var(--gray)">${emp}</div><div style="font-size:12px;color:#A0AEC0;margin-top:.2rem">Sin ejercicio</div><div style="font-size:12px;color:var(--accent);margin-top:.5rem"><i class="ti ti-plus"></i> Agregar</div></div>`;});
+  }
+  if(!grid.innerHTML)grid.innerHTML='<div style="color:var(--gray);font-size:13px;padding:.5rem">No hay ejercicios con ese filtro.</div>';
+}
+
+// ═══ PANEL TIEMPOS ═══
+function buildTiempoMesFiltro(){const s=document.getElementById('tiempo-filtro-mes');s.innerHTML='<option value="todos">Todos los meses</option>';MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});s.onchange=renderTiempos;}
+function renderTiempos(){
+  const filtroMes=document.getElementById('tiempo-filtro-mes').value;
+  const sort=document.getElementById('tiempo-sort').value;
+  const yr=activeYear;
+  const totalRut=totalMinsRutinariaYr(yr),totalCie=totalMinsCierreYr(yr),totalTodo=totalMinsAll(yr);
+  document.getElementById('kpi-tiempos').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Tiempo total ${yr}</div><div class="kpi-val" style="color:var(--navy)">${fmtMin(totalTodo)}</div></div>
+    <div class="kpi"><div class="kpi-label">Rutinarias</div><div class="kpi-val" style="color:var(--accent)">${fmtMin(totalRut)}</div></div>
+    <div class="kpi"><div class="kpi-label">Cierre de balance</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(totalCie)}</div></div>
+    <div class="kpi"><div class="kpi-label">Empresas con tiempo</div><div class="kpi-val">${EMPRESAS.filter((_,i)=>totalMinsEmpYr(i,yr)>0).length}</div></div>
+  `;
+  let emps=EMPRESAS.map((emp,ei)=>{
+    const tiempos=tiemposYr(yr).filter(r=>r.emp===ei&&(filtroMes==='todos'||r.mes===parseInt(filtroMes)));
+    const totalM=tiempos.reduce((a,r)=>a+r.mins,0);
+    const rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+    const cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+    const porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
+    const ej=data.ejercicios.find(e=>e.emp===ei);
+    const porCierre=ej&&ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
+    return{emp,ei,totalM,rut,cie,porTarea,porCierre};
+  }).filter(x=>x.totalM>0);
+  if(sort==='total')emps.sort((a,b)=>b.totalM-a.totalM);else emps.sort((a,b)=>a.emp.localeCompare(b.emp));
+  const grid=document.getElementById('tiempo-grid');grid.innerHTML='';
+  if(!emps.length){grid.innerHTML='<div style="color:var(--gray);font-size:13px">Sin registros de tiempo para este periodo.</div>';return;}
+  emps.forEach(({emp,ei,totalM,rut,cie,porTarea,porCierre})=>{
+    const card=document.createElement('div');card.className='tiempo-card';
+    const tareasHtml=porTarea.map(x=>`<div class="stat-row"><span>${x.t}</span><span class="stat-val">${fmtMin(x.m)}</span></div>`).join('');
+    const cierreHtml=porCierre.map(x=>`<div class="stat-row"><span style="color:var(--purple)">${x.t}</span><span class="stat-val" style="color:var(--purple)">${fmtMin(x.m)}</span></div>`).join('');
+    card.innerHTML=`
+      <div class="tiempo-card-header">
+        <div><div class="tiempo-emp-name">${emp}</div><div style="font-size:11px;color:var(--gray);margin-top:2px">${filtroMes==='todos'?yr:MESES[parseInt(filtroMes)]}</div></div>
+        <span class="tiempo-total-badge">${fmtMin(totalM)}</span>
+      </div>
+      <div class="tiempo-sub">
+        <div class="tiempo-sub-item"><div class="tiempo-sub-label">Rutinarias</div><div class="tiempo-sub-val">${fmtMin(rut)}</div></div>
+        <div class="tiempo-sub-item"><div class="tiempo-sub-label">Cierre</div><div class="tiempo-sub-val" style="color:var(--purple)">${fmtMin(cie)}</div></div>
+      </div>
+      ${tareasHtml||cierreHtml?`<div style="border-top:0.5px solid var(--border);padding-top:.5rem">${tareasHtml}${cierreHtml?`<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;padding:4px 0 2px">Tareas de cierre</div>${cierreHtml}`:''}</div>`:''}
+      <div style="margin-top:.5rem;text-align:right"><button class="btn-ghost btn-sm" onclick="openTrabajo(${ei},${MES_ACTUAL},${yr})" style="font-size:11px"><i class="ti ti-pencil"></i> Cargar trabajo</button></div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ═══ RESUMEN ANUAL ═══
+function renderAnual(){
+  document.getElementById('anual-yr').textContent=activeYear;
+  let totalH=0,totalP=0;for(let m=0;m<12;m++){totalH+=countMes(m,'Hecho');totalP+=countMes(m,'Pendiente');}
+  const mC=MESES.filter((_,m)=>countMes(m,'Hecho')>0||countMes(m,'Pendiente')>0).length;
+  const avg=Math.round(MESES.reduce((a,_,m)=>a+pctMes(m),0)/12*100);
+  const totalMins=totalMinsAll(activeYear);
+  document.getElementById('kpi-anual').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Tareas hechas</div><div class="kpi-val" style="color:var(--green2)">${totalH}</div><div class="kpi-sub">${activeYear}</div></div>
+    <div class="kpi"><div class="kpi-label">Pendientes</div><div class="kpi-val" style="color:var(--red)">${totalP}</div></div>
+    <div class="kpi"><div class="kpi-label">Meses trabajados</div><div class="kpi-val">${mC}/12</div></div>
+    <div class="kpi"><div class="kpi-label">Promedio anual</div><div class="kpi-val" style="color:var(--accent)">${avg}%</div></div>
+    <div class="kpi"><div class="kpi-label">Tiempo total</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(totalMins)}</div></div>
+  `;
+  const bars=document.getElementById('anual-bars');bars.innerHTML='';
+  MESES.forEach((mes,m)=>{
+    const pct=pctMes(m),w=Math.round(pct*100);const has=countMes(m,'Hecho')>0||countMes(m,'Pendiente')>0;
+    const esHoy=m===MES_ACTUAL&&activeYear===ANO_ACTUAL;
+    bars.innerHTML+=`<div class="anual-row">
+      <span class="anual-mes">${mes}${esHoy?'<span style="font-size:9px;background:var(--accent);color:white;padding:1px 5px;border-radius:99px;margin-left:4px">hoy</span>':''}</span>
+      <div class="anual-bar-wrap"><div class="anual-bar" style="width:${w}%"></div></div>
+      <span class="anual-pct">${w}%</span>
+      <span class="ab ${has&&w>=100?'ab-ok':has&&w>0?'ab-wip':'ab-no'}">${has&&w>=100?'Completo':has&&w>0?w+'% av.':'Sin datos'}</span>
+      <span style="font-size:11px;color:#A0AEC0;margin-left:6px">${fmtMin(totalMinsMesYr(m,activeYear))}</span>
+    </div>`;
+  });
+  const empEl=document.getElementById('anual-emp');
+  const empMins=EMPRESAS.map((e,i)=>({e,m:totalMinsEmpYr(i,activeYear)})).sort((a,b)=>b.m-a.m).filter(x=>x.m>0);
+  empEl.innerHTML=empMins.length?empMins.map(x=>`<div class="stat-row"><span style="font-size:12px">${x.e}</span><span class="stat-val">${fmtMin(x.m)}</span></div>`).join(''):'<div style="font-size:12px;color:#A0AEC0">Sin registros</div>';
+  const td=document.getElementById('anual-tareas');td.innerHTML='';
+  const rutTotal=totalMinsRutinariaYr(activeYear),cieTotal=totalMinsCierreYr(activeYear);
+  td.innerHTML+=`<div class="card" style="padding:.75rem;grid-column:span 2"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:.4rem">Totales</div><div style="display:flex;gap:16px"><div><div style="font-size:11px;color:var(--gray)">Rutinarias</div><div style="font-size:17px;font-weight:700;color:var(--accent)">${fmtMin(rutTotal)}</div></div><div><div style="font-size:11px;color:var(--purple)">Cierre de balance</div><div style="font-size:17px;font-weight:700;color:var(--purple)">${fmtMin(cieTotal)}</div></div></div></div>`;
+  TAREAS.forEach((tarea,ti)=>{
+    const mins=totalMinsTareaYr(ti,activeYear);const hec=MESES.reduce((a,_,m)=>a+EMPRESAS.reduce((b,_,e)=>b+(getE(m,e,ti)==='Hecho'?1:0),0),0);
+    td.innerHTML+=`<div class="card" style="padding:.75rem"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">${tarea}</div><div style="font-size:15px;font-weight:700">${fmtMin(mins)}</div><div style="font-size:11px;color:var(--gray);margin-top:3px">${hec} realizadas${mins&&hec?` · ${Math.round(mins/hec)}m prom`:''}</div></div>`;
+  });
+}
+
+// ═══ CONFIG ═══
+function renderConfig(){
+  document.getElementById('emp-count').textContent=`(${EMPRESAS.length})`;
+  const el=document.getElementById('emp-list');el.innerHTML='';
+  EMPRESAS.forEach((emp,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${emp.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('empresa',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-danger btn-sm" onclick="eliminarEmpresa(${i})"><i class="ti ti-trash"></i></button>`;el.appendChild(row);});
+  const tl=document.getElementById('tarea-list');tl.innerHTML='';
+  TAREAS.forEach((t,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${t.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('tarea',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-danger btn-sm" onclick="eliminarTarea(${i})"><i class="ti ti-trash"></i></button>`;tl.appendChild(row);});
+  const yg=document.getElementById('year-grid');yg.innerHTML='';
+  getYears().forEach(y=>{const h=Object.values(data.anos[y].tareas||{}).filter(v=>v==='Hecho').length;const div=document.createElement('div');div.className='year-card'+(y===activeYear?' ay':'');div.innerHTML=`<button class="btn-danger btn-sm" style="position:absolute;top:5px;right:5px;padding:2px 5px" onclick="event.stopPropagation();deleteYear(${y})"><i class="ti ti-trash"></i></button><div class="year-num">${y}</div><div class="year-sub">${h} hechas</div>`;div.addEventListener('click',()=>{activeYear=y;document.getElementById('year-sel').value=y;renderAll();renderConfig();});yg.appendChild(div);});
+}
+function renombrar(tipo,input,idx){
+  input.style.borderColor='transparent';input.style.background='transparent';
+  const val=input.value.trim();if(!val){input.value=tipo==='empresa'?EMPRESAS[idx]:TAREAS[idx];return;}
+  if(tipo==='empresa'){if(EMPRESAS[idx]===val)return;EMPRESAS[idx]=val;}else{if(TAREAS[idx]===val)return;TAREAS[idx]=val;}
+  markUnsaved();buildWorkEmpSel();toast('Actualizado');
+}
+function addEmpresa(){const inp=document.getElementById('new-emp'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}EMPRESAS.push(val);markUnsaved();inp.value='';renderConfig();buildWorkEmpSel();toast(`"${val}" agregada`);}
+function eliminarEmpresa(i){
+  if(!confirm(`Eliminar "${EMPRESAS[i]}"?`))return;const n=EMPRESAS[i];EMPRESAS.splice(i,1);
+  Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(e===i)return;nt[`${m}_${e>i?e-1:e}_${t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>r.emp!==i).map(r=>({...r,emp:r.emp>i?r.emp-1:r.emp}));});
+  data.ejercicios=data.ejercicios.filter(e=>e.emp!==i).map(e=>({...e,emp:e.emp>i?e.emp-1:e.emp}));
+  markUnsaved();saveNow();renderConfig();buildWorkEmpSel();toast(`"${n}" eliminada`);
+}
+function addTarea(){const inp=document.getElementById('new-tarea'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}TAREAS.push(val);markUnsaved();inp.value='';renderConfig();toast(`"${val}" agregada`);}
+function eliminarTarea(i){
+  if(!confirm(`Eliminar "${TAREAS[i]}"?`))return;const n=TAREAS[i];TAREAS.splice(i,1);
+  Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(t===i)return;nt[`${m}_${e}_${t>i?t-1:t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>r.tarea!==i||r.tipo==='cierre').map(r=>r.tipo!=='cierre'&&r.tarea>i?{...r,tarea:r.tarea-1}:r);});
+  markUnsaved();saveNow();renderConfig();toast(`"${n}" eliminada`);
+}
+
+// ═══ NAVEGACION ═══
+function renderAll(){
+  if(activePanel==='dashboard')renderDashboard();
+  else if(activePanel==='trabajo')renderTrabajo();
+  else if(activePanel==='ejercicios')renderEjercicios();
+  else if(activePanel==='tiempos')renderTiempos();
+  else if(activePanel==='anual')renderAnual();
+  else if(activePanel==='config')renderConfig();
+}
+function showPanel(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  activePanel=name;renderAll();
+}
+['modal-ej','modal-cierre'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+// ═══ INIT ═══
+function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoMesFiltro();}
+loadData().then(()=>{
+  document.getElementById('hdate').textContent=HOY.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  init();renderDashboard();startAutoBackup();suscribirCambiosRemotos();
+});
+</script>
+</body>
+</html>

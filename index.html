@@ -20,7 +20,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,.08)
 }
 .wrap{max-width:1400px;margin:0 auto;padding:1rem}
-/* HEADER */
 .header{background:var(--navy);color:white;padding:.85rem 1.5rem;border-radius:var(--radius-lg);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
 .header h1{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
 .header .sub{font-size:11px;opacity:.55;margin-top:2px}
@@ -31,8 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .year-pill select option{color:#1A202C;background:white}
 .hbtn{background:rgba(255,255,255,.12);border:0.5px solid rgba(255,255,255,.2);color:white;border-radius:var(--radius);padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
 .hbtn:hover{background:rgba(255,255,255,.22)}
-/* SAVE BTN */
-.save-btn{background:#38A169;border:none;color:white;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:all .2s;position:relative}
+.save-btn{background:#38A169;border:none;color:white;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:all .2s}
 .save-btn:hover{background:#2F855A}
 .save-btn.unsaved{background:#E53E3E;animation:pulse 2s infinite}
 .save-btn.saving{background:#4299E1}
@@ -40,13 +38,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
 .save-indicator{position:fixed;top:12px;right:12px;background:#1A202C;color:white;padding:6px 12px;border-radius:var(--radius);font-size:12px;font-weight:600;opacity:0;transform:translateY(-8px);transition:all .25s;z-index:9999;pointer-events:none}
 .save-indicator.show{opacity:1;transform:translateY(0)}
-/* TABS */
 .tabs{display:flex;gap:3px;background:white;border-radius:var(--radius-lg);padding:4px;margin-bottom:1rem;box-shadow:var(--shadow);flex-wrap:wrap;border:0.5px solid var(--border)}
 .tab{padding:7px 12px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--gray);border-radius:var(--radius);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
 .tab.active{background:var(--accent);color:white}
 .tab:hover:not(.active){background:var(--grayl);color:#1A202C}
 .panel{display:none}.panel.active{display:block}
-/* BUTTONS */
 button{font-family:inherit;cursor:pointer;border-radius:var(--radius);border:0.5px solid var(--border);background:white;color:#1A202C;padding:7px 14px;font-size:13px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
 button:hover{background:var(--grayl)}
 .btn-primary{background:var(--accent);color:white;border-color:var(--accent)}
@@ -58,7 +54,6 @@ button:hover{background:var(--grayl)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--gray)}
 .btn-ghost:hover{background:var(--grayl)}
 .btn-sm{padding:4px 9px;font-size:12px}
-/* KPI */
 .kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem}
 .kpi{background:white;border-radius:var(--radius-lg);padding:.85rem 1rem;border:0.5px solid var(--border);box-shadow:var(--shadow)}
 .kpi-label{font-size:10px;color:var(--gray);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
@@ -66,7 +61,6 @@ button:hover{background:var(--grayl)}
 .kpi-sub{font-size:11px;color:#A0AEC0;margin-top:2px}
 .prog-wrap{height:5px;background:var(--grayl);border-radius:99px;overflow:hidden;margin-top:5px}
 .prog-bar{height:100%;border-radius:99px;background:var(--accent);transition:width .4s}
-/* EMPRESA CARDS */
 .emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
 .emp-card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.9rem 1rem;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);position:relative}
 .emp-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(66,153,225,.15);transform:translateY(-1px)}
@@ -80,13 +74,11 @@ button:hover{background:var(--grayl)}
 .d-hecho{background:var(--green2)}.d-pendiente{background:#FC8181}.d-nc{background:#CBD5E0}.d-empty{background:#E2E8F0}
 .emp-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-top:.5rem;padding-top:.5rem;border-top:0.5px solid var(--border)}
 .emp-footer strong{color:#2D3748}
-/* TRABAJO */
 .work-header{display:flex;gap:12px;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end}
 .work-field{display:flex;flex-direction:column;gap:4px}
 .work-field label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em}
 .work-grid{display:grid;grid-template-columns:1fr 310px;gap:1rem;align-items:start}
 @media(max-width:860px){.work-grid{grid-template-columns:1fr}}
-/* TAREA ROWS */
 .tarea-row{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.75rem 1rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);flex-wrap:wrap;transition:all .2s}
 .tarea-row.tr-hecho{border-color:var(--green2);background:#F0FFF4}
 .tarea-row.tr-pendiente{border-color:#FC8181;background:#FFF5F5}
@@ -95,7 +87,6 @@ button:hover{background:var(--grayl)}
 .tarea-name{font-size:13px;font-weight:600;color:#2D3748;min-width:105px;flex-shrink:0}
 .tarea-type{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px}
 .tt-cierre{background:var(--purplel);color:var(--purple)}
-/* ESTADOS — obligatorios, solo rotan entre los 3 */
 .estado-btns{display:flex;gap:4px;flex-wrap:wrap}
 .ebtn{padding:4px 11px;font-size:11px;font-weight:700;border-radius:99px;border:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:3px;opacity:.45}
 .ebtn:hover{opacity:.75;transform:scale(1.03)}
@@ -110,28 +101,24 @@ button:hover{background:var(--grayl)}
 .mins-inp{width:58px;font-size:12px;padding:4px 5px;border-radius:var(--radius);border:0.5px solid var(--border);text-align:center;font-family:inherit}
 .mins-inp:focus{border-color:var(--accent);outline:none}
 .tarea-acum{font-size:10px;color:var(--gray);white-space:nowrap}
-/* SEC DIVIDER */
 .sec-divider{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;padding:.5rem 0;margin:.5rem 0 .3rem;display:flex;align-items:center;gap:8px}
 .sec-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-/* PILLS MESES */
 .mes-pills-wrap{display:flex;flex-wrap:wrap;gap:3px}
 .mes-pill{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .15s;white-space:nowrap}
 .mes-pill.active{background:var(--accent);color:white;border-color:var(--accent)}
 .mp-ok{background:var(--greenl);color:var(--green)}.mp-wip{background:var(--orangel);color:var(--orange)}.mp-empty{background:var(--grayl);color:var(--gray)}
 .mes-pill:hover:not(.active){border-color:var(--accent)}
-/* SIDEBAR */
 .scard{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.85rem 1rem;box-shadow:var(--shadow);margin-bottom:8px}
 .scard-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.55rem;display:flex;align-items:center;gap:4px}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px}
 .stat-row:last-child{border-bottom:none}
 .stat-val{font-weight:700;color:#1A202C}
 .timer-disp{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy);letter-spacing:-.02em;margin-bottom:5px}
-/* EJ INFO */
 .ej-info-bar{border-radius:var(--radius);padding:.5rem .85rem;font-size:12px;font-weight:500;margin-bottom:.75rem}
 .ej-ok{background:#F0FFF4;border:0.5px solid var(--green2);color:var(--green)}
 .ej-warn{background:var(--orangel);border:0.5px solid #F6AD55;color:var(--orange)}
 .ej-danger{background:var(--redl);border:0.5px solid #FC8181;color:var(--red)}
-/* PANEL TIEMPOS */
+.ej-cerrado{background:var(--grayl);border:0.5px solid #A0AEC0;color:var(--gray)}
 .tiempo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
 .tiempo-card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem;box-shadow:var(--shadow)}
 .tiempo-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
@@ -141,7 +128,6 @@ button:hover{background:var(--grayl)}
 .tiempo-sub-item{background:var(--grayl);border-radius:var(--radius);padding:6px 8px}
 .tiempo-sub-label{font-size:10px;color:var(--gray);margin-bottom:2px}
 .tiempo-sub-val{font-weight:700;color:#2D3748;font-size:13px}
-/* ANUAL */
 .anual-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
 .anual-row:last-child{border-bottom:none}
 .anual-mes{width:110px;font-size:13px;font-weight:600;flex-shrink:0}
@@ -150,21 +136,25 @@ button:hover{background:var(--grayl)}
 .anual-pct{width:38px;text-align:right;font-size:12px;font-weight:700;color:var(--gray)}
 .ab{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
 .ab-ok{background:var(--greenl);color:var(--green)}.ab-wip{background:var(--orangel);color:var(--orange)}.ab-no{background:var(--grayl);color:var(--gray)}
-/* EJERCICIOS */
 .ej-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
 .ej-card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.9rem 1rem;position:relative;box-shadow:var(--shadow)}
 .ej-card.ec-danger{border-color:#FC8181;background:#FFF5F5}
 .ej-card.ec-warn{border-color:#F6AD55;background:#FFFAF0}
 .ej-card.ec-ok{border-color:#68D391;background:#F0FFF4}
+.ej-card.ec-cerrado{border-color:#A0AEC0;background:#F7FAFC;opacity:.85}
 .ej-card.ec-nuevo{border:0.5px dashed var(--border);background:var(--bg);cursor:pointer}
 .ej-emp{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:.25rem}
 .ej-num{font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.04em}
 .ej-dates{font-size:11px;color:var(--gray);margin:.35rem 0}
 .ej-dates strong{color:#2D3748;font-weight:600}
-.ej-dias{font-size:11px;font-weight:700;margin-top:.3rem}
-.dias-ok{color:var(--green)}.dias-warn{color:var(--orange)}.dias-danger{color:var(--red)}
 .ej-tag{display:inline-block;background:var(--redl);color:var(--red);font-size:10px;font-weight:600;padding:2px 6px;border-radius:99px;margin:2px 2px 0 0}
-/* CONFIG */
+.badge-cerrado{background:#EDF2F7;color:#718096;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid #CBD5E0}
+.badge-abierto{background:#C6F6D5;color:#276749;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid #68D391}
+.ej-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem}
+.ej-sel-btn{padding:5px 12px;font-size:12px;font-weight:600;border-radius:99px;border:2px solid var(--border);background:white;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.ej-sel-btn:hover{border-color:var(--accent)}
+.ej-sel-btn.active{border-color:var(--accent);background:#EBF8FF;color:var(--accent2)}
+.ej-sel-btn.cerrado{border-color:#A0AEC0;color:var(--gray)}
 .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:700px){.cfg-grid{grid-template-columns:1fr}}
 .cfg-box{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
@@ -179,7 +169,6 @@ button:hover{background:var(--grayl)}
 .year-card.ay{border-color:var(--accent);background:#EBF8FF}
 .year-num{font-size:19px;font-weight:700;color:var(--navy)}
 .year-sub{font-size:10px;color:var(--gray);margin-top:2px}
-/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:white;border-radius:var(--radius-lg);padding:1.5rem;width:min(520px,96vw);max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -193,11 +182,13 @@ button:hover{background:var(--grayl)}
 .card{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1rem;box-shadow:var(--shadow)}
 .sec{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin:1.1rem 0 .55rem}
 .row-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-/* TOAST */
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A202C;color:white;padding:.7rem 1.2rem;border-radius:var(--radius-lg);font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;z-index:1000}
 .toast.show{opacity:1;transform:translateY(0)}
-/* BACKUP BADGE */
 .backup-badge{font-size:10px;background:rgba(255,255,255,.15);border-radius:99px;padding:2px 8px;color:rgba(255,255,255,.75)}
+.hist-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--radius);font-size:12px;border:0.5px solid var(--border);background:white;margin-bottom:4px}
+.hist-mins{font-weight:700;color:var(--navy);min-width:35px}
+.hist-label{flex:1;color:var(--gray)}
+.hist-fecha{font-size:10px;color:#A0AEC0;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -219,7 +210,7 @@ button:hover{background:var(--grayl)}
       <button class="hbtn" onclick="importData()"><i class="ti ti-upload"></i> Importar</button>
     </div>
   </div>
-  <div id="remote-banner" style="display:none;background:#FEEBC8;color:#C05621;border-radius:var(--radius-lg);padding:.6rem 1rem;margin-bottom:1rem;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <div id="remote-banner" style="display:none;background:#FEEBC8;color:#C05621;border-radius:var(--radius-lg);padding:.6rem 1rem;margin-bottom:1rem;font-size:12px;font-weight:600;align-items:center;justify-content:space-between;gap:8px">
     <span><i class="ti ti-alert-triangle"></i> Otra PC guardo cambios nuevos.</span>
     <button class="btn-sm btn-primary" onclick="syncNow()">Traer cambios ahora</button>
   </div>
@@ -235,8 +226,6 @@ button:hover{background:var(--grayl)}
 
   <!-- DASHBOARD -->
   <div id="panel-dashboard" class="panel active">
-      <button onclick="document.getElementById('welcome-banner').style.display='none'" style="background:transparent;border:none;color:#4299E1;padding:0;font-size:16px;flex-shrink:0;cursor:pointer;margin-left:auto">✕</button>
-    </div>
     <div class="kpi-strip" id="kpi-dash"></div>
     <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between">
       <div style="font-size:13px;font-weight:600;color:var(--navy)">Todas las empresas &mdash; <span id="dash-mes-lbl" style="color:var(--accent)"></span></div>
@@ -252,6 +241,10 @@ button:hover{background:var(--grayl)}
       <div class="work-field">
         <label>Empresa</label>
         <select class="sel" id="work-emp" onchange="onChangeWorkEmp()" style="font-size:14px;font-weight:600;min-width:200px"></select>
+      </div>
+      <div class="work-field" id="work-ej-field">
+        <label>Ejercicio</label>
+        <div class="ej-selector" id="ej-selector"></div>
       </div>
       <div class="work-field">
         <label>Mes del ejercicio</label>
@@ -297,6 +290,10 @@ button:hover{background:var(--grayl)}
           </div>
         </div>
         <div class="scard" id="work-stats"></div>
+        <div class="scard">
+          <div class="scard-title" style="justify-content:space-between"><span><i class="ti ti-list"></i> Historial de tiempos</span><button class="btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" onclick="toggleHistorial()">Ver/Ocultar</button></div>
+          <div id="historial-wrap" style="display:none"><div id="historial-list"></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -306,12 +303,15 @@ button:hover{background:var(--grayl)}
     <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
       <div>
         <div style="font-size:15px;font-weight:700;color:var(--navy)">Ejercicios por empresa</div>
-        <div style="font-size:12px;color:var(--gray);margin-top:2px">Fechas, avance y asientos pendientes</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Abiertos y cerrados — historial completo</div>
       </div>
       <div class="row-gap">
         <select class="sel" id="ej-filtro" onchange="renderEjercicios()">
-          <option value="todos">Todos</option><option value="urgente">Urgentes</option>
-          <option value="proximo">Proximos</option><option value="ok">En termino</option><option value="sin">Sin ejercicio</option>
+          <option value="todos">Todos</option>
+          <option value="abiertos">Abiertos</option>
+          <option value="cerrados">Cerrados</option>
+          <option value="urgente">Urgentes</option>
+          <option value="sin">Sin ejercicio</option>
         </select>
         <button class="btn-primary" onclick="openEjModal()"><i class="ti ti-plus"></i> Nuevo ejercicio</button>
       </div>
@@ -325,10 +325,11 @@ button:hover{background:var(--grayl)}
     <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between;flex-wrap:wrap">
       <div style="font-size:13px;font-weight:600;color:var(--navy)">Tiempo invertido por empresa</div>
       <div class="row-gap">
-        <select class="sel" id="tiempo-filtro-mes"></select>
+        <select class="sel" id="tiempo-filtro-emp" onchange="renderTiempos()"><option value="todos">Todas las empresas</option></select>
         <select class="sel" id="tiempo-sort" onchange="renderTiempos()">
           <option value="total">Mayor tiempo primero</option>
           <option value="nombre">Orden alfabetico</option>
+          <option value="ejercicio">Por ejercicio completo</option>
         </select>
       </div>
     </div>
@@ -374,7 +375,6 @@ button:hover{background:var(--grayl)}
             <button class="btn-primary btn-sm" onclick="addTarea()"><i class="ti ti-plus"></i> Agregar</button>
           </div>
         </div>
-        <p style="font-size:11px;color:#A0AEC0;margin-top:.4rem">Las tareas de cierre se agregan por empresa desde "Cargar trabajo".</p>
       </div>
     </div>
     <div class="sec" style="margin-top:1.25rem">Anos registrados</div>
@@ -394,7 +394,7 @@ button:hover{background:var(--grayl)}
   <div class="modal">
     <h3 id="modal-ej-title">Nuevo ejercicio</h3>
     <div class="frow"><label>Empresa</label><select id="ej-emp-sel" style="width:100%"></select></div>
-    <div class="frow"><label>Nombre / numero</label><input type="text" id="ej-numero" placeholder="Ej: Ejercicio N 12 / 2025-2026"></div>
+    <div class="frow"><label>Nombre / numero</label><input type="text" id="ej-numero" placeholder="Ej: Ejercicio N 18 / 2025-2026"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="frow"><label>Fecha de inicio</label><input type="date" id="ej-inicio"></div>
       <div class="frow"><label>Fecha de cierre</label><input type="date" id="ej-cierre"></div>
@@ -403,6 +403,7 @@ button:hover{background:var(--grayl)}
     <div class="modal-btns">
       <button onclick="closeEjModal()">Cancelar</button>
       <button class="btn-danger" id="ej-del-btn" style="display:none" onclick="deleteEj()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-warn" id="ej-cerrar-btn" style="display:none" onclick="toggleCierreEj()"><i class="ti ti-lock"></i> <span id="ej-cerrar-lbl">Cerrar ejercicio</span></button>
       <button class="btn-primary" onclick="saveEj()"><i class="ti ti-check"></i> Guardar</button>
     </div>
   </div>
@@ -425,13 +426,25 @@ button:hover{background:var(--grayl)}
   </div>
 </div>
 
+<!-- MODAL EDITAR TIEMPO -->
+<div class="modal-overlay" id="modal-edit-tiempo">
+  <div class="modal">
+    <h3>Editar registro de tiempo</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem" id="edit-tiempo-label"></div>
+    <div class="frow"><label>Minutos</label><input type="number" id="edit-tiempo-mins" min="1" max="9999"></div>
+    <div class="modal-btns">
+      <button onclick="closeEditTiempo()">Cancelar</button>
+      <button class="btn-danger" onclick="deleteEditTiempo()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="saveEditTiempo()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="save-indicator" id="save-indicator"></div>
 
 <script>
-// ═══ CONSTANTES ═══
 const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-// ESTADOS: sin vacío — solo rotan entre los 3
 const ESTADOS_CICLO=["Hecho","Pendiente","No Corresponde"];
 const HOY=new Date(); HOY.setHours(0,0,0,0);
 const ANO_ACTUAL=HOY.getFullYear();
@@ -441,16 +454,16 @@ let EMPRESAS=["STORAGE S.R.L","SINDICATO L","PROVIMED S.R.L","GOLOSINAS NATY","I
 let TAREAS=["Compras","Ventas","IVA","IIBB","Seg. e Hig.","Sueldos","Concil. Bco"];
 let activePanel='dashboard';
 let activeYear=ANO_ACTUAL;
-let workEmpIdx=0, workMes=MES_ACTUAL, workMesYear=ANO_ACTUAL;
+let workEmpIdx=0, workEjIdx=null, workMes=MES_ACTUAL, workMesYear=ANO_ACTUAL;
 let editingEjIdx=null, editingCierreEmpIdx=null, editingCierreIdx=null;
 let hasUnsavedChanges=false;
 let autoBackupTimer=null;
-let idbDB=null;
+let saveDebounce=null;
+let editTiempoRef=null;
 
 let data={empresas:[],tareas_nombres:[],anos:{},ejercicios:[]};
 
 // ═══ CONFIG SUPABASE ═══
-// Completa estos 2 datos con los de tu proyecto (Settings > API en supabase.com)
 const SUPABASE_URL = "https://ovmtacwcrxfxtxsggbxt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_llgiKHW2EOOTiP4haWewFg_Vubpj01W";
 const ROW_ID = "estudio"; // fila unica compartida por todo el estudio
@@ -467,17 +480,15 @@ function sbReady(){
   return true;
 }
 
-let saveDebounce=null;
-
+// ═══ GUARDADO ═══
 function markUnsaved(){
-  if(applyingRemote)return; // no marcar "sin guardar" cuando el cambio vino de otra PC
+  if(applyingRemote)return;
   hasUnsavedChanges=true;
   const btn=document.getElementById('save-btn');
   if(btn){btn.className='save-btn unsaved';document.getElementById('save-lbl').textContent='Guardar cambios';}
   clearTimeout(saveDebounce);
   saveDebounce=setTimeout(()=>saveNow(true),5000);
 }
-
 async function saveNow(silent=false){
   clearTimeout(saveDebounce);
   if(!sbReady())return;
@@ -499,17 +510,10 @@ async function saveNow(silent=false){
   document.getElementById('last-save-lbl').textContent=`Guardado: ${hora}`;
   if(!silent)showSaveIndicator(`Guardado a las ${hora}`);
 }
-function showSaveIndicator(msg){
-  const el=document.getElementById('save-indicator');
-  el.textContent='✓ '+msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2000);
-}
-function startAutoBackup(){
-  clearInterval(autoBackupTimer);
-  autoBackupTimer=setInterval(()=>{ if(hasUnsavedChanges) saveNow(true); },2*60*1000);
-}
+function showSaveIndicator(msg){const el=document.getElementById('save-indicator');el.textContent='✓ '+msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
+function startAutoBackup(){clearInterval(autoBackupTimer);autoBackupTimer=setInterval(()=>{if(hasUnsavedChanges)saveNow(true);},2*60*1000);}
 
-// ═══ CARGA DATOS DESDE SUPABASE ═══
+// ═══ CARGA DESDE SUPABASE ═══
 async function loadData(){
   let loaded=null;
   if(sbReady()){
@@ -527,12 +531,18 @@ async function loadData(){
   if(!data.ejercicios)data.ejercicios=[];
   if(!data.anos)data.anos={};
   if(!data.anos[ANO_ACTUAL])data.anos[ANO_ACTUAL]={tareas:{},tiempos:[]};
-  data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];});
+  data.ejercicios.forEach(ej=>{
+    if(!ej.tareascierre)ej.tareascierre=[];
+    if(!ej.estadoscierre)ej.estadoscierre=[];
+    if(ej.cerrado===undefined)ej.cerrado=false;
+  });
   if(!loaded){
-    // primera vez: creamos la fila en Supabase
     await saveNow(true);
   }
 }
+
+function getYD(y){if(!data.anos[y])data.anos[y]={tareas:{},tiempos:[]};return data.anos[y];}
+function getYears(){return Object.keys(data.anos).map(Number).sort();}
 
 // ═══ SINCRONIZAR CON OTRAS PCs ═══
 async function syncNow(){
@@ -556,9 +566,6 @@ function suscribirCambiosRemotos(){
     .subscribe();
 }
 
-function getYD(y){if(!data.anos[y])data.anos[y]={tareas:{},tiempos:[]};return data.anos[y];}
-function getYears(){return Object.keys(data.anos).map(Number).sort();}
-
 // ═══ BACKUP MANUAL (archivo .json, ademas de la nube) ═══
 function exportData(){
   data.empresas=[...EMPRESAS];data.tareas_nombres=[...TAREAS];
@@ -580,10 +587,9 @@ function importData(){
       const imp=JSON.parse(text);
       const src=imp.anos||imp.años;
       if(src){data=imp;if(!data.anos&&data.años){data.anos={};Object.entries(data.años).forEach(([y,v])=>data.anos[y]=v);}}
-      else if(imp.tareas){data={anos:{},ejercicios:[]};data.anos[ANO_ACTUAL]={tareas:imp.tareas,tiempos:imp.tiempos||[]};if(imp.empresas)data.empresas=imp.empresas;if(imp.tareas_nombres)data.tareas_nombres=imp.tareas_nombres;}
       else throw 0;
       if(!data.ejercicios)data.ejercicios=[];
-      data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];});
+      data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];if(!ej.estadoscierre)ej.estadoscierre=[];if(ej.cerrado===undefined)ej.cerrado=false;});
       if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
       if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
       await saveNow();init();renderAll();renderConfig();toast('Datos importados y guardados en la nube');
@@ -591,13 +597,7 @@ function importData(){
   };
   inp.click();
 }
-
-// ═══ AVISO AL CERRAR ═══
-window.addEventListener('beforeunload',e=>{
-  if(hasUnsavedChanges){
-    e.preventDefault();e.returnValue='';
-  }
-});
+window.addEventListener('beforeunload',e=>{if(hasUnsavedChanges){e.preventDefault();e.returnValue='';}});
 
 // ═══ AÑOS ═══
 function buildYearSel(){const s=document.getElementById('year-sel');s.innerHTML='';getYears().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;if(y===activeYear)o.selected=true;s.appendChild(o);});}
@@ -609,14 +609,10 @@ function deleteYear(y){if(getYears().length<=1){toast('No podes eliminar el unic
 function key(m,e,t){return`${m}_${e}_${t}`;}
 function getE(m,e,t,yr){return(getYD(yr||activeYear).tareas[key(m,e,t)])||'';}
 function setE(m,e,t,v,yr){getYD(yr||activeYear).tareas[key(m,e,t)]=v;markUnsaved();}
-function getCierreE(m,ejIdx,ci,yr){return(getYD(yr||activeYear).tareas[`${m}_cierre_${ejIdx}_${ci}`])||'';}
-function setCierreE(m,ejIdx,ci,v,yr){getYD(yr||activeYear).tareas[`${m}_cierre_${ejIdx}_${ci}`]=v;markUnsaved();}
-// ciclar estado OBLIGATORIO: Hecho -> Pendiente -> N/C -> Hecho (sin vacío)
-function ciclarEstado(actual){
-  if(!actual||actual==='')return'Pendiente'; // primera vez: pendiente
-  const idx=ESTADOS_CICLO.indexOf(actual);
-  return ESTADOS_CICLO[(idx+1)%3];
-}
+function getCierreE(ejIdx,ci){return data.ejercicios[ejIdx]?.estadoscierre?.[ci]||'';}
+function setCierreE(ejIdx,ci,v){if(!data.ejercicios[ejIdx].estadoscierre)data.ejercicios[ejIdx].estadoscierre=[];data.ejercicios[ejIdx].estadoscierre[ci]=v;markUnsaved();}
+function ejsDeEmpresa(empIdx){return data.ejercicios.map((e,i)=>({...e,_idx:i})).filter(e=>e.emp===empIdx);}
+function ejActivoDeEmpresa(empIdx){const ejs=ejsDeEmpresa(empIdx);return ejs.find(e=>!e.cerrado)||ejs[ejs.length-1]||null;}
 function pctEmpMesYr(m,e,yr){let d=0,nc=0;for(let t=0;t<TAREAS.length;t++){const s=getE(m,e,t,yr);if(s==='Hecho')d++;else if(s==='No Corresponde')nc++;}const den=TAREAS.length-nc;return den<=0?1:d/den;}
 function pctMes(m){let s=0;for(let e=0;e<EMPRESAS.length;e++)s+=pctEmpMesYr(m,e,activeYear);return s/EMPRESAS.length;}
 function countMes(m,est){let c=0;for(let e=0;e<EMPRESAS.length;e++)for(let t=0;t<TAREAS.length;t++)if(getE(m,e,t)===est)c++;return c;}
@@ -628,6 +624,11 @@ function totalMinsTareaYr(t,yr){return tiemposYr(yr).filter(r=>r.tarea===t&&r.ti
 function totalMinsCierreYr(yr){return tiemposYr(yr).filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);}
 function totalMinsRutinariaYr(yr){return tiemposYr(yr).filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);}
 function totalMinsAll(yr){return tiemposYr(yr).reduce((a,r)=>a+r.mins,0);}
+function totalMinsEjercicio(ej){
+  if(!ej)return 0;
+  const meses=getMesesEj(ej)||[];
+  return meses.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes).reduce((a,r)=>a+r.mins,0),0);
+}
 function fmtMin(m){if(!m||m===0)return'--';if(m<60)return m+'m';const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
 function parseDate(iso){if(!iso)return null;const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
 function fmtDate(iso){if(!iso)return'';return parseDate(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -649,10 +650,10 @@ function buildDashMesSel(){const s=document.getElementById('dash-mes-sel');s.inn
 function renderDashboard(){
   const mes=parseInt(document.getElementById('dash-mes-sel').value);
   document.getElementById('dash-mes-lbl').textContent=`${MESES[mes]} ${activeYear}`;
-  const h=countMes(mes,'Hecho'),p=countMes(mes,'Pendiente'),nc=countMes(mes,'No Corresponde');
+  const h=countMes(mes,'Hecho'),p=countMes(mes,'Pendiente');
   const pct=pctMes(mes),mins=totalMinsMesYr(mes,activeYear),totalAnio=totalMinsAll(activeYear);
   const comp=EMPRESAS.filter((_,ei)=>Math.round(pctEmpMesYr(mes,ei,activeYear)*100)===100).length;
-  const urg=data.ejercicios.filter(ej=>{const d=diasRestantes(ej.cierre);return d!==null&&d>=0&&d<=30;}).length;
+  const urg=data.ejercicios.filter(ej=>!ej.cerrado&&diasRestantes(ej.cierre)!==null&&diasRestantes(ej.cierre)>=0&&diasRestantes(ej.cierre)<=30).length;
   document.getElementById('kpi-dash').innerHTML=`
     <div class="kpi"><div class="kpi-label">Empresas</div><div class="kpi-val">${EMPRESAS.length}</div><div class="kpi-sub">${comp} completadas</div></div>
     <div class="kpi"><div class="kpi-label">Hechas</div><div class="kpi-val" style="color:var(--green2)">${h}</div><div class="kpi-sub">${MESES[mes]}</div></div>
@@ -666,11 +667,15 @@ function renderDashboard(){
   EMPRESAS.forEach((emp,ei)=>{
     const pctE=pctEmpMesYr(mes,ei,activeYear),w=Math.round(pctE*100);
     const minsM=totalMinsEmpMesYr(ei,mes,activeYear),minsA=totalMinsEmpYr(ei,activeYear);
-    const ej=data.ejercicios.find(e=>e.emp===ei);
+    const ej=ejActivoDeEmpresa(ei);
     const diasC=ej?diasRestantes(ej.cierre):null;
     const dots=TAREAS.map((_,t)=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
     let ejHtml='';
-    if(ej&&diasC!==null){const ec=diasC<0?'color:var(--red)':diasC<=30?'color:var(--orange)':'color:var(--green)';const et=diasC<0?`Vencido hace ${Math.abs(diasC)}d`:diasC===0?'Vence hoy':`${diasC}d para cierre`;ejHtml=`<div style="font-size:10px;${ec};font-weight:600;margin-top:2px">${ej.numero} · ${et}</div>`;}
+    if(ej){
+      const numEjs=ejsDeEmpresa(ei).length;
+      if(ej.cerrado){ejHtml=`<div style="font-size:10px;color:var(--gray);font-weight:600;margin-top:2px">${ej.numero} · Cerrado ${numEjs>1?'· '+numEjs+' ejercicios':''}</div>`;}
+      else if(diasC!==null){const ec=diasC<0?'color:var(--red)':diasC<=30?'color:var(--orange)':'color:var(--green)';const et=diasC<0?`Vencido hace ${Math.abs(diasC)}d`:diasC===0?'Vence hoy':`${diasC}d para cierre`;ejHtml=`<div style="font-size:10px;${ec};font-weight:600;margin-top:2px">${ej.numero} · ${et}${numEjs>1?' · '+numEjs+' ejs':''}</div>`;}
+    }
     const card=document.createElement('div');card.className='emp-card'+(w===100?' complete':'');
     card.innerHTML=`
       <div class="emp-card-top"><div><div class="emp-name">${emp}</div>${ejHtml}</div><span class="emp-badge ${badgeCls(pctE)}">${w}%</span></div>
@@ -684,19 +689,51 @@ function renderDashboard(){
 
 // ═══ CARGAR TRABAJO ═══
 function buildWorkEmpSel(){const s=document.getElementById('work-emp');s.innerHTML='';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});s.value=workEmpIdx;}
-function openTrabajo(empIdx,mes,anio){workEmpIdx=empIdx;workMes=mes;workMesYear=anio||activeYear;showPanel('trabajo',document.querySelectorAll('.tab')[1]);document.getElementById('work-emp').value=empIdx;renderTrabajo();}
+
+function buildEjSelector(){
+  const div=document.getElementById('ej-selector');div.innerHTML='';
+  const ejs=ejsDeEmpresa(workEmpIdx);
+  if(!ejs.length){div.innerHTML='<span style="font-size:12px;color:#A0AEC0">Sin ejercicios. <span style="color:var(--accent);cursor:pointer" onclick="showPanel(\'ejercicios\',document.querySelectorAll(\'.tab\')[2])">Agregar →</span></span>';return;}
+  ejs.forEach(ej=>{
+    const btn=document.createElement('button');
+    btn.className='ej-sel-btn'+(ej.cerrado?' cerrado':'')+(workEjIdx===ej._idx?' active':'');
+    btn.innerHTML=`${ej.cerrado?'🔒':'📂'} ${ej.numero}${ej.cerrado?' <span style="font-size:9px">(cerrado)</span>':''}`;
+    btn.onclick=()=>{workEjIdx=ej._idx;buildEjSelector();renderTrabajoContent();};
+    div.appendChild(btn);
+  });
+}
+
+function openTrabajo(empIdx,mes,anio){
+  workEmpIdx=empIdx;workMes=mes;workMesYear=anio||activeYear;
+  const ejActivo=ejActivoDeEmpresa(empIdx);
+  workEjIdx=ejActivo?ejActivo._idx:null;
+  showPanel('trabajo',document.querySelectorAll('.tab')[1]);
+  document.getElementById('work-emp').value=empIdx;
+  renderTrabajo();
+}
+
 function onChangeWorkEmp(){
   workEmpIdx=parseInt(document.getElementById('work-emp').value);
-  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
+  const ejActivo=ejActivoDeEmpresa(workEmpIdx);
+  workEjIdx=ejActivo?ejActivo._idx:null;
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   const meses=getMesesEj(ej)||[{mes:MES_ACTUAL,anio:activeYear}];
-  workMes=meses[0].mes;workMesYear=meses[0].anio;renderTrabajo();
+  workMes=meses[0].mes;workMesYear=meses[0].anio;
+  renderTrabajo();
 }
+
 function renderTrabajo(){
   workEmpIdx=parseInt(document.getElementById('work-emp').value);
-  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
-  const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
+  buildEjSelector();
+  renderTrabajoContent();
+}
+
+function renderTrabajoContent(){
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   const mesesList=getMesesEj(ej)||MESES.map((_,i)=>({mes:i,anio:activeYear}));
-  // PILLS
+  if(!mesesList.some(x=>x.mes===workMes&&x.anio===workMesYear)){
+    workMes=mesesList[0].mes;workMesYear=mesesList[0].anio;
+  }
   const pillsDiv=document.getElementById('mes-pills');pillsDiv.innerHTML='';
   mesesList.forEach(({mes,anio})=>{
     const pct=pctEmpMesYr(mes,workEmpIdx,anio);
@@ -707,28 +744,35 @@ function renderTrabajo(){
     const yrSuffix=anio!==activeYear?` '${String(anio).slice(2)}`:'';
     pill.textContent=MESES[mes].slice(0,3)+yrSuffix;
     pill.title=`${MESES[mes]} ${anio}`;
-    pill.onclick=()=>{workMes=mes;workMesYear=anio;renderTrabajo();};
+    pill.onclick=()=>{workMes=mes;workMesYear=anio;renderTrabajoContent();};
     pillsDiv.appendChild(pill);
   });
   document.getElementById('work-mes-lbl').textContent=`${MESES[workMes]} ${workMesYear}`;
-  // EJ INFO
   const ejDiv=document.getElementById('ej-info-bar');
-  if(ej){const d=diasRestantes(ej.cierre);const cls=d<0?'ej-danger':d<=30?'ej-warn':'ej-ok';ejDiv.innerHTML=`<div class="ej-info-bar ${cls}">${ej.numero} | Cierre: ${fmtDate(ej.cierre)} | ${d<0?`Vencido hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Faltan ${d} dias`}</div>`;}
-  else ejDiv.innerHTML=`<div style="font-size:11px;color:#A0AEC0;margin-bottom:.6rem">Sin ejercicio. <span style="color:var(--accent);cursor:pointer" onclick="showPanel('ejercicios',document.querySelectorAll('.tab')[2])">Agregar →</span></div>`;
-  renderTareaRows(ejIdx);
-  renderCierreRows(ej,ejIdx);
+  if(ej){
+    const d=diasRestantes(ej.cierre);
+    const cls=ej.cerrado?'ej-cerrado':d<0?'ej-danger':d<=30?'ej-warn':'ej-ok';
+    const estado=ej.cerrado?'🔒 CERRADO':d<0?`Vencido hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Faltan ${d} dias`;
+    ejDiv.innerHTML=`<div class="ej-info-bar ${cls}">${ej.numero} | ${fmtDate(ej.inicio)} → ${fmtDate(ej.cierre)} | ${estado}</div>`;
+  } else {
+    ejDiv.innerHTML=`<div style="font-size:11px;color:#A0AEC0;margin-bottom:.6rem">Sin ejercicio. <span style="color:var(--accent);cursor:pointer" onclick="showPanel('ejercicios',document.querySelectorAll('.tab')[2])">Agregar →</span></div>`;
+  }
+  renderTareaRows();
+  renderCierreRows(ej,workEjIdx);
   renderWorkStats();
-  buildTareaSels(ej,ejIdx);
+  buildTareaSels(ej,workEjIdx);
+  renderHistorial();
 }
 
-function renderTareaRows(ejIdx){
+function renderTareaRows(){
   const div=document.getElementById('tarea-rows');div.innerHTML='';
   TAREAS.forEach((tarea,ti)=>{
     const est=getE(workMes,workEmpIdx,ti,workMesYear);
     const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
-    const minsA=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+    const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+    const mesesEj=getMesesEj(ej)||[];
+    const minsEj=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===workEmpIdx&&r.mes===mes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0),0);
     const row=document.createElement('div');row.className=`tarea-row ${estadoClass(est)}`;
-    // botones siempre visibles, el activo resaltado
     row.innerHTML=`
       <span class="tarea-name">${tarea}</span>
       <div class="estado-btns">
@@ -739,7 +783,7 @@ function renderTareaRows(ejIdx){
       <div class="tarea-time-area">
         <input type="number" class="mins-inp" id="mins-r-${ti}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('rutinaria',${ti});this.value='';}">
         <button class="btn-success btn-sm" onclick="addMinsRow('rutinaria',${ti})"><i class="ti ti-plus"></i></button>
-        <span class="tarea-acum">Mes:<b>${fmtMin(minsM)}</b> Ano:<b>${fmtMin(minsA)}</b></span>
+        <span class="tarea-acum">Mes:<b>${fmtMin(minsM)}</b>${mesesEj.length?` Ej:<b>${fmtMin(minsEj)}</b>`:''}</span>
       </div>`;
     div.appendChild(row);
   });
@@ -747,11 +791,13 @@ function renderTareaRows(ejIdx){
 
 function renderCierreRows(ej,ejIdx){
   const div=document.getElementById('cierre-rows');div.innerHTML='';
-  if(!ej||!ej.tareascierre||!ej.tareascierre.length){div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">No hay tareas de cierre. Agrega las que correspondan a esta empresa.</div>';return;}
+  if(!ej||!ej.tareascierre||!ej.tareascierre.length){
+    div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">No hay tareas de cierre. Agrega las que correspondan a esta empresa.</div>';return;
+  }
+  const mesesEj=getMesesEj(ej)||[];
   ej.tareascierre.forEach((tc,ci)=>{
-    const est=getCierreE(workMes,ejIdx,ci,workMesYear);
-    const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0);
-    const minsA=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0);
+    const est=getCierreE(ejIdx,ci);
+    const minsCiTotal=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0),0);
     const row=document.createElement('div');row.className=`tarea-row tr-cierre ${estadoClass(est)}`;
     row.innerHTML=`
       <span class="tarea-name">${tc.nombre}<span class="tarea-type tt-cierre">CIERRE</span></span>
@@ -764,7 +810,7 @@ function renderCierreRows(ej,ejIdx){
         <input type="number" class="mins-inp" id="mins-c-${ci}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('cierre',${ci});this.value='';}">
         <button class="btn-success btn-sm" onclick="addMinsRow('cierre',${ci})"><i class="ti ti-plus"></i></button>
         <button class="btn-ghost btn-sm" onclick="openCierreModal(${ejIdx},${ci})"><i class="ti ti-pencil"></i></button>
-        <span class="tarea-acum">Mes:<b>${fmtMin(minsM)}</b> Ano:<b>${fmtMin(minsA)}</b></span>
+        <span class="tarea-acum">Ejercicio:<b>${fmtMin(minsCiTotal)}</b></span>
       </div>`;
     div.appendChild(row);
   });
@@ -772,13 +818,10 @@ function renderCierreRows(ej,ejIdx){
 
 function setEstadoWork(ti,estado){
   setE(workMes,workEmpIdx,ti,estado,workMesYear);
-  // redibujar solo la fila
-  const div=document.getElementById('tarea-rows');
-  if(div)renderTareaRows(data.ejercicios.findIndex(e=>e.emp===workEmpIdx));
-  renderWorkStats();refreshActivePill();
+  renderTareaRows();renderWorkStats();refreshActivePill();
 }
 function setEstadoCierre(ejIdx,ci,estado){
-  setCierreE(workMes,ejIdx,ci,estado,workMesYear);
+  setCierreE(ejIdx,ci,estado);
   const ej=data.ejercicios[ejIdx];renderCierreRows(ej,ejIdx);renderWorkStats();
 }
 function refreshActivePill(){
@@ -788,10 +831,9 @@ function refreshActivePill(){
 }
 function marcarTodas(estado){
   for(let t=0;t<TAREAS.length;t++)setE(workMes,workEmpIdx,t,estado,workMesYear);
-  const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);
-  const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
-  if(ej&&ej.tareascierre)ej.tareascierre.forEach((_,ci)=>setCierreE(workMes,ejIdx,ci,estado,workMesYear));
-  markUnsaved();renderTareaRows(ejIdx);renderCierreRows(ej,ejIdx);renderWorkStats();toast(`Todas marcadas: ${estado}`);
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+  if(ej&&ej.tareascierre){if(!ej.estadoscierre)ej.estadoscierre=[];ej.tareascierre.forEach((_,ci)=>{ej.estadoscierre[ci]=estado;});}
+  markUnsaved();renderTareaRows();renderCierreRows(ej,workEjIdx);renderWorkStats();toast(`Todas marcadas: ${estado}`);
 }
 function addMinsRow(tipo,idx){
   const inp=document.getElementById(tipo==='cierre'?`mins-c-${idx}`:`mins-r-${idx}`);
@@ -804,20 +846,53 @@ function buildTareaSels(ej,ejIdx){
   ['timer-tarea','manual-tarea'].forEach(id=>{const s=document.getElementById(id);s.innerHTML='';ops.forEach(op=>{const o=document.createElement('option');o.value=JSON.stringify({tipo:op.tipo,idx:op.idx});o.textContent=op.label;s.appendChild(o);});});
 }
 function renderWorkStats(){
-  const minsA=totalMinsEmpYr(workEmpIdx,workMesYear);
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+  const minsEj=totalMinsEjercicio(ej);
   const minsM=totalMinsEmpMesYr(workEmpIdx,workMes,workMesYear);
   const minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
   const minsCie=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
-  const mesConDatos=MESES.map((_,m)=>totalMinsEmpMesYr(workEmpIdx,m,workMesYear)).filter(m=>m>0);
-  const estim=mesConDatos.length?Math.round(mesConDatos.reduce((a,b)=>a+b,0)/mesConDatos.length*12):0;
   document.getElementById('work-stats').innerHTML=`
     <div class="scard-title"><i class="ti ti-chart-bar"></i> Tiempos — ${EMPRESAS[workEmpIdx]}</div>
     <div class="stat-row"><span>Este mes (${MESES[workMes]})</span><span class="stat-val">${fmtMin(minsM)}</span></div>
-    <div class="stat-row"><span>Total ${workMesYear}</span><span class="stat-val">${fmtMin(minsA)}</span></div>
-    <div class="stat-row"><span>Rutinarias</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
+    ${ej?`<div class="stat-row"><span>Total ejercicio</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsEj)}</span></div>`:''}
+    <div class="stat-row"><span>Rutinarias ${workMesYear}</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
     <div class="stat-row"><span>Tareas de cierre</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsCie)}</span></div>
-    ${estim?`<div class="stat-row"><span>Estimado ejercicio</span><span class="stat-val" style="color:var(--accent)">~${fmtMin(estim)}</span></div>`:''}
   `;
+}
+
+// ═══ HISTORIAL ═══
+function toggleHistorial(){const w=document.getElementById('historial-wrap');w.style.display=w.style.display==='none'?'block':'none';if(w.style.display==='block')renderHistorial();}
+function renderHistorial(){
+  const div=document.getElementById('historial-list');div.innerHTML='';
+  const regs=[];
+  getYears().forEach(yr=>{(getYD(yr).tiempos||[]).forEach((r,i)=>{if(r.emp===workEmpIdx&&r.mes===workMes)regs.push({...r,yr,idx:i});});});
+  if(!regs.length){div.innerHTML='<div style="font-size:12px;color:#A0AEC0">Sin registros en este mes.</div>';return;}
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+  regs.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')).forEach(r=>{
+    const label=r.tipo==='cierre'?(ej?.tareascierre?.[r.tarea]?.nombre||'Cierre'):(TAREAS[r.tarea]||'Tarea');
+    const row=document.createElement('div');row.className='hist-row';
+    row.innerHTML=`<span class="hist-mins">${fmtMin(r.mins)}</span><span class="hist-label">${label} <span style="font-size:10px;background:var(--grayl);padding:1px 5px;border-radius:99px">${r.tipo==='cierre'?'cierre':'rutinaria'}</span></span><span class="hist-fecha">${r.fecha||''}</span><button class="btn-ghost btn-sm" style="padding:2px 6px;font-size:11px" onclick="openEditTiempo('${r.yr}',${r.idx},'${label}',${r.mins})"><i class="ti ti-pencil"></i></button>`;
+    div.appendChild(row);
+  });
+}
+
+// ═══ MODAL EDITAR TIEMPO ═══
+function openEditTiempo(yr,idx,label,mins){editTiempoRef={yr:parseInt(yr),idx};document.getElementById('edit-tiempo-label').textContent=label;document.getElementById('edit-tiempo-mins').value=mins;document.getElementById('modal-edit-tiempo').classList.add('open');}
+function closeEditTiempo(){document.getElementById('modal-edit-tiempo').classList.remove('open');editTiempoRef=null;}
+function saveEditTiempo(){
+  const mins=parseInt(document.getElementById('edit-tiempo-mins').value);
+  if(!mins||mins<1){toast('Minutos invalidos',true);return;}
+  getYD(editTiempoRef.yr).tiempos[editTiempoRef.idx].mins=mins;
+  markUnsaved();saveNow();closeEditTiempo();renderTareaRows();
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+  renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();toast('Tiempo actualizado');
+}
+function deleteEditTiempo(){
+  if(!confirm('Eliminar este registro?'))return;
+  getYD(editTiempoRef.yr).tiempos.splice(editTiempoRef.idx,1);
+  markUnsaved();saveNow();closeEditTiempo();renderTareaRows();
+  const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
+  renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();toast('Registro eliminado');
 }
 
 // ═══ CRONOMETRO ═══
@@ -833,14 +908,15 @@ function saveTimeRec(mins,origen,empIdx,tareaIdx,mes,anio,tipo){
   const yr=anio||activeYear;const yd=getYD(yr);if(!yd.tiempos)yd.tiempos=[];
   yd.tiempos.push({mes,emp:empIdx,tarea:tareaIdx,mins,tipo:tipo||'rutinaria',origen,fecha:new Date().toISOString().slice(0,10)});
   markUnsaved();toast(`${fmtMin(mins)} guardados`);
-  if(activePanel==='trabajo'){const ej=data.ejercicios.find(e=>e.emp===workEmpIdx);const ejIdx=ej?data.ejercicios.indexOf(ej):-1;renderTareaRows(ejIdx);renderCierreRows(ej,ejIdx);renderWorkStats();}
+  if(activePanel==='trabajo'){const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;renderTareaRows();renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();}
 }
 
 // ═══ MODAL TAREAS CIERRE ═══
 function openCierreModal(ejIdx=null,ci=null){
-  const empIdx=workEmpIdx;const ej=ejIdx!==null?data.ejercicios[ejIdx]:data.ejercicios.find(e=>e.emp===empIdx);
+  const idx=ejIdx!==null?ejIdx:workEjIdx;
+  const ej=idx!==null?data.ejercicios[idx]:null;
   if(!ej){toast('Esta empresa no tiene ejercicio. Agrega uno primero.',true);return;}
-  editingCierreEmpIdx=data.ejercicios.indexOf(ej);editingCierreIdx=ci;
+  editingCierreEmpIdx=idx;editingCierreIdx=ci;
   document.getElementById('modal-cierre-title').textContent=ci!==null?'Editar tarea de cierre':'Nueva tarea de cierre';
   document.getElementById('modal-cierre-emp').textContent=`${EMPRESAS[ej.emp]} · ${ej.numero}`;
   document.getElementById('cierre-del-btn').style.display=ci!==null?'inline-flex':'none';
@@ -855,12 +931,13 @@ function saveCierre(){
   const ej=data.ejercicios[editingCierreEmpIdx];if(!ej.tareascierre)ej.tareascierre=[];
   if(editingCierreIdx!==null){ej.tareascierre[editingCierreIdx].nombre=nombre;ej.tareascierre[editingCierreIdx].desc=desc;}
   else ej.tareascierre.push({nombre,desc});
-  markUnsaved();saveNow();closeCierreModal();renderTrabajo();toast('Tarea de cierre guardada');
+  markUnsaved();saveNow();closeCierreModal();renderTrabajoContent();toast('Tarea de cierre guardada');
 }
 function deleteCierre(){
   if(!confirm('Eliminar esta tarea de cierre?'))return;
   data.ejercicios[editingCierreEmpIdx].tareascierre.splice(editingCierreIdx,1);
-  markUnsaved();saveNow();closeCierreModal();renderTrabajo();toast('Eliminada');
+  if(data.ejercicios[editingCierreEmpIdx].estadoscierre)data.ejercicios[editingCierreEmpIdx].estadoscierre.splice(editingCierreIdx,1);
+  markUnsaved();saveNow();closeCierreModal();renderTrabajoContent();toast('Eliminada');
 }
 
 // ═══ EJERCICIOS ═══
@@ -868,60 +945,118 @@ function openEjModal(idx=null){
   editingEjIdx=idx;
   document.getElementById('modal-ej-title').textContent=idx===null?'Nuevo ejercicio':'Editar ejercicio';
   document.getElementById('ej-del-btn').style.display=idx!==null?'inline-flex':'none';
+  document.getElementById('ej-cerrar-btn').style.display=idx!==null?'inline-flex':'none';
   const sel=document.getElementById('ej-emp-sel');sel.innerHTML='';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;sel.appendChild(o);});
-  if(idx!==null){const ej=data.ejercicios[idx];sel.value=ej.emp;document.getElementById('ej-numero').value=ej.numero||'';document.getElementById('ej-inicio').value=ej.inicio||'';document.getElementById('ej-cierre').value=ej.cierre||'';document.getElementById('ej-obs').value=ej.obs||'';}
-  else{sel.value=0;['ej-numero','ej-inicio','ej-cierre','ej-obs'].forEach(id=>document.getElementById(id).value='');}
+  if(idx!==null){
+    const ej=data.ejercicios[idx];sel.value=ej.emp;
+    document.getElementById('ej-numero').value=ej.numero||'';
+    document.getElementById('ej-inicio').value=ej.inicio||'';
+    document.getElementById('ej-cierre').value=ej.cierre||'';
+    document.getElementById('ej-obs').value=ej.obs||'';
+    const lbl=document.getElementById('ej-cerrar-lbl');
+    lbl.textContent=ej.cerrado?'Reabrir ejercicio':'Cerrar ejercicio';
+    document.getElementById('ej-cerrar-btn').className=ej.cerrado?'btn-success':'btn-warn';
+  } else {
+    sel.value=0;['ej-numero','ej-inicio','ej-cierre','ej-obs'].forEach(id=>document.getElementById(id).value='');
+  }
   document.getElementById('modal-ej').classList.add('open');
 }
 function closeEjModal(){document.getElementById('modal-ej').classList.remove('open');editingEjIdx=null;}
+function toggleCierreEj(){
+  if(editingEjIdx===null)return;
+  const ej=data.ejercicios[editingEjIdx];
+  ej.cerrado=!ej.cerrado;
+  const lbl=document.getElementById('ej-cerrar-lbl');
+  lbl.textContent=ej.cerrado?'Reabrir ejercicio':'Cerrar ejercicio';
+  document.getElementById('ej-cerrar-btn').className=ej.cerrado?'btn-success':'btn-warn';
+  toast(ej.cerrado?'Ejercicio cerrado':'Ejercicio reabierto');
+}
 function saveEj(){
-  const emp=parseInt(document.getElementById('ej-emp-sel').value);const numero=document.getElementById('ej-numero').value.trim();
-  const inicio=document.getElementById('ej-inicio').value;const cierre=document.getElementById('ej-cierre').value;const obs=document.getElementById('ej-obs').value.trim();
-  if(!numero){toast('Ingresa un nombre',true);return;}if(!inicio||!cierre){toast('Ingresa fechas',true);return;}if(inicio>=cierre){toast('El cierre debe ser posterior al inicio',true);return;}
-  const ej={emp,numero,inicio,cierre,obs,tareascierre:[]};
-  if(editingEjIdx!==null){ej.tareascierre=data.ejercicios[editingEjIdx].tareascierre||[];data.ejercicios[editingEjIdx]=ej;}
-  else data.ejercicios.push(ej);
+  const emp=parseInt(document.getElementById('ej-emp-sel').value);
+  const numero=document.getElementById('ej-numero').value.trim();
+  const inicio=document.getElementById('ej-inicio').value;
+  const cierre=document.getElementById('ej-cierre').value;
+  const obs=document.getElementById('ej-obs').value.trim();
+  if(!numero){toast('Ingresa un nombre',true);return;}
+  if(!inicio||!cierre){toast('Ingresa fechas',true);return;}
+  if(inicio>=cierre){toast('El cierre debe ser posterior al inicio',true);return;}
+  if(editingEjIdx!==null){
+    const ej=data.ejercicios[editingEjIdx];
+    ej.emp=emp;ej.numero=numero;ej.inicio=inicio;ej.cierre=cierre;ej.obs=obs;
+  } else {
+    data.ejercicios.push({emp,numero,inicio,cierre,obs,cerrado:false,tareascierre:[],estadoscierre:[]});
+  }
   markUnsaved();saveNow();closeEjModal();renderEjercicios();toast('Ejercicio guardado');
 }
-function deleteEj(){if(editingEjIdx===null)return;if(!confirm('Eliminar este ejercicio?'))return;data.ejercicios.splice(editingEjIdx,1);markUnsaved();saveNow();closeEjModal();renderEjercicios();toast('Eliminado');}
+function deleteEj(){
+  if(editingEjIdx===null)return;
+  if(!confirm('Eliminar este ejercicio y todos sus datos?'))return;
+  data.ejercicios.splice(editingEjIdx,1);
+  markUnsaved();saveNow();closeEjModal();renderEjercicios();toast('Eliminado');
+}
 function renderEjercicios(){
-  const filtro=document.getElementById('ej-filtro').value;const grid=document.getElementById('ej-grid');grid.innerHTML='';
+  const filtro=document.getElementById('ej-filtro').value;
+  const grid=document.getElementById('ej-grid');grid.innerHTML='';
+  const empConEj=new Set();
   data.ejercicios.forEach((ej,idx)=>{
-    const d=diasRestantes(ej.cierre);const venc=d!==null&&d<0,urg=d!==null&&d>=0&&d<=30,prox=d!==null&&d>30&&d<=90;
-    if(filtro==='urgente'&&!venc&&!urg)return;if(filtro==='proximo'&&!prox)return;if(filtro==='ok'&&(venc||urg||prox))return;if(filtro==='sin')return;
-    const cls=venc||urg?'ec-danger':prox?'ec-warn':'ec-ok';
+    const d=diasRestantes(ej.cierre);
+    const venc=d!==null&&d<0,urg=d!==null&&d>=0&&d<=30;
+    if(filtro==='abiertos'&&ej.cerrado)return;
+    if(filtro==='cerrados'&&!ej.cerrado)return;
+    if(filtro==='urgente'&&(ej.cerrado||(!venc&&!urg)))return;
+    if(filtro==='sin')return;
+    empConEj.add(ej.emp);
+    const cls=ej.cerrado?'ec-cerrado':venc||urg?'ec-danger':d!==null&&d<=90?'ec-warn':'ec-ok';
     const mesesEj=getMesesEj(ej)||[];
-    let hh=0,tot=0;mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){const est=getE(mes,ej.emp,t,anio);if(est!==''&&est!=='No Corresponde'){tot++;if(est==='Hecho')hh++;}}});
+    let hh=0,tot=0;
+    mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){const est=getE(mes,ej.emp,t,anio);if(est!==''&&est!=='No Corresponde'){tot++;if(est==='Hecho')hh++;}}});
     const pct=tot?Math.round(hh/tot*100):0;
-    const pend=[];mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){if(getE(mes,ej.emp,t,anio)==='Pendiente')pend.push(`${MESES[mes].slice(0,3)}·${TAREAS[t]}`);}});
-    const cierrePend=(ej.tareascierre||[]).filter((_,ci)=>mesesEj.some(({mes,anio})=>getCierreE(mes,idx,ci,anio)==='Pendiente'));
-    const minsTotal=mesesEj.reduce((a,{mes,anio})=>a+totalMinsEmpMesYr(ej.emp,mes,anio),0);
-    const diasHtml=d!==null?`<div class="ej-dias ${venc||urg?'dias-danger':prox?'dias-warn':'dias-ok'}">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
+    const pend=[];
+    mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){if(getE(mes,ej.emp,t,anio)==='Pendiente')pend.push(`${MESES[mes].slice(0,3)}·${TAREAS[t]}`);}});
+    const cierrePend=(ej.tareascierre||[]).filter((_,ci)=>getCierreE(idx,ci)==='Pendiente');
+    const minsTotal=totalMinsEjercicio(ej);
+    const diasHtml=!ej.cerrado&&d!==null?`<div style="font-size:11px;font-weight:700;color:${venc||urg?'var(--red)':d<=90?'var(--orange)':'var(--green)'};margin-top:.3rem">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
     grid.innerHTML+=`<div class="ej-card ${cls}">
-      <button class="btn-ghost btn-sm" style="position:absolute;top:7px;right:7px;padding:3px 7px" onclick="openEjModal(${idx})"><i class="ti ti-pencil"></i></button>
-      <div class="ej-emp">${EMPRESAS[ej.emp]||'?'}</div><div class="ej-num">${ej.numero}</div>
+      <div style="position:absolute;top:7px;right:7px;display:flex;gap:4px">
+        <button class="btn-ghost btn-sm" style="padding:3px 7px;color:var(--red)" onclick="generarPDF(${idx})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
+        <button class="btn-ghost btn-sm" style="padding:3px 7px" onclick="openEjModal(${idx})"><i class="ti ti-pencil"></i></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:.25rem">
+        <div class="ej-emp">${EMPRESAS[ej.emp]||'?'}</div>
+        <span class="${ej.cerrado?'badge-cerrado':'badge-abierto'}">${ej.cerrado?'🔒 Cerrado':'📂 Abierto'}</span>
+      </div>
+      <div class="ej-num">${ej.numero}</div>
       <div class="ej-dates">Inicio: <strong>${fmtDate(ej.inicio)}</strong> &nbsp; Cierre: <strong>${fmtDate(ej.cierre)}</strong></div>
       ${diasHtml}
       ${tot?`<div style="margin:.5rem 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--gray)">Avance rutinarias</span><span style="font-weight:700">${pct}%</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct===100?'var(--green2)':pct>60?'var(--accent)':'var(--orange)'}"></div></div></div>`:''}
       ${pend.length?`<div style="margin-top:.3rem">${pend.map(p=>`<span class="ej-tag">${p}</span>`).join('')}</div>`:''}
       ${cierrePend.length?`<div style="margin-top:.3rem">${cierrePend.map(tc=>`<span class="ej-tag" style="background:var(--purplel);color:var(--purple)">${tc.nombre}</span>`).join('')}</div>`:''}
-      ${!pend.length&&!cierrePend.length&&tot?`<div style="font-size:11px;color:var(--green);margin-top:.3rem">Sin pendientes</div>`:''}
-      <div style="font-size:11px;color:var(--gray);margin-top:.4rem">Tiempo total: <strong>${fmtMin(minsTotal)||'--'}</strong></div>
+      ${!pend.length&&!cierrePend.length&&tot?`<div style="font-size:11px;color:var(--green);margin-top:.3rem">✅ Sin pendientes</div>`:''}
+      <div style="font-size:11px;color:var(--gray);margin-top:.4rem">Tiempo total: <strong style="color:var(--purple)">${fmtMin(minsTotal)||'--'}</strong></div>
       ${ej.tareascierre&&ej.tareascierre.length?`<div style="font-size:10px;color:var(--purple);margin-top:.2rem">${ej.tareascierre.length} tarea(s) de cierre</div>`:''}
       ${ej.obs?`<div style="font-size:11px;color:var(--gray);margin-top:.3rem;font-style:italic">${ej.obs}</div>`:''}
+      <div style="margin-top:.6rem">
+        <button class="btn-ghost btn-sm" style="font-size:11px;width:100%;justify-content:center" onclick="openTrabajo(${ej.emp},${MES_ACTUAL},${activeYear});workEjIdx=${idx};buildEjSelector();renderTrabajoContent()">
+          <i class="ti ti-pencil"></i> Cargar trabajo en este ejercicio
+        </button>
+      </div>
     </div>`;
   });
   if(filtro==='todos'||filtro==='sin'){
-    const conEj=new Set(data.ejercicios.map(e=>e.emp));
-    EMPRESAS.forEach((emp,ei)=>{if(conEj.has(ei))return;grid.innerHTML+=`<div class="ej-card ec-nuevo" onclick="openEjModal();document.getElementById('ej-emp-sel').value=${ei}"><div class="ej-emp" style="color:var(--gray)">${emp}</div><div style="font-size:12px;color:#A0AEC0;margin-top:.2rem">Sin ejercicio</div><div style="font-size:12px;color:var(--accent);margin-top:.5rem"><i class="ti ti-plus"></i> Agregar</div></div>`;});
+    EMPRESAS.forEach((emp,ei)=>{
+      if(empConEj.has(ei)&&filtro!=='sin')return;
+      if(!ejsDeEmpresa(ei).length){
+        grid.innerHTML+=`<div class="ej-card ec-nuevo" onclick="openEjModal();setTimeout(()=>document.getElementById('ej-emp-sel').value=${ei},50)"><div class="ej-emp" style="color:var(--gray)">${emp}</div><div style="font-size:12px;color:#A0AEC0;margin-top:.2rem">Sin ejercicio</div><div style="font-size:12px;color:var(--accent);margin-top:.5rem"><i class="ti ti-plus"></i> Agregar</div></div>`;
+      }
+    });
   }
   if(!grid.innerHTML)grid.innerHTML='<div style="color:var(--gray);font-size:13px;padding:.5rem">No hay ejercicios con ese filtro.</div>';
 }
 
-// ═══ PANEL TIEMPOS ═══
-function buildTiempoMesFiltro(){const s=document.getElementById('tiempo-filtro-mes');s.innerHTML='<option value="todos">Todos los meses</option>';MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});s.onchange=renderTiempos;}
+// ═══ TIEMPOS ═══
+function buildTiempoEmpFiltro(){const s=document.getElementById('tiempo-filtro-emp');s.innerHTML='<option value="todos">Todas las empresas</option>';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});}
 function renderTiempos(){
-  const filtroMes=document.getElementById('tiempo-filtro-mes').value;
+  const filtroEmp=document.getElementById('tiempo-filtro-emp').value;
   const sort=document.getElementById('tiempo-sort').value;
   const yr=activeYear;
   const totalRut=totalMinsRutinariaYr(yr),totalCie=totalMinsCierreYr(yr),totalTodo=totalMinsAll(yr);
@@ -932,25 +1067,39 @@ function renderTiempos(){
     <div class="kpi"><div class="kpi-label">Empresas con tiempo</div><div class="kpi-val">${EMPRESAS.filter((_,i)=>totalMinsEmpYr(i,yr)>0).length}</div></div>
   `;
   let emps=EMPRESAS.map((emp,ei)=>{
-    const tiempos=tiemposYr(yr).filter(r=>r.emp===ei&&(filtroMes==='todos'||r.mes===parseInt(filtroMes)));
-    const totalM=tiempos.reduce((a,r)=>a+r.mins,0);
-    const rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
-    const cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
-    const porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
-    const ej=data.ejercicios.find(e=>e.emp===ei);
-    const porCierre=ej&&ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
-    return{emp,ei,totalM,rut,cie,porTarea,porCierre};
-  }).filter(x=>x.totalM>0);
-  if(sort==='total')emps.sort((a,b)=>b.totalM-a.totalM);else emps.sort((a,b)=>a.emp.localeCompare(b.emp));
+    const ej=ejActivoDeEmpresa(ei);
+    let totalM,rut,cie,porTarea,porCierre;
+    if(sort==='ejercicio'&&ej){
+      const mesesEj=getMesesEj(ej)||[];
+      const tiempos=mesesEj.flatMap(({mes,anio})=>tiemposYr(anio).filter(r=>r.emp===ei&&r.mes===mes));
+      totalM=tiempos.reduce((a,r)=>a+r.mins,0);
+      rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+      cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
+      porCierre=ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
+    } else {
+      const tiempos=tiemposYr(yr).filter(r=>r.emp===ei);
+      totalM=tiempos.reduce((a,r)=>a+r.mins,0);
+      rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+      cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
+      porCierre=ej&&ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
+    }
+    return{emp,ei,totalM,rut,cie,porTarea,porCierre,ej};
+  }).filter(x=>x.totalM>0&&(filtroEmp==='todos'||x.ei===parseInt(filtroEmp)));
+  if(sort==='total')emps.sort((a,b)=>b.totalM-a.totalM);
+  else if(sort==='nombre')emps.sort((a,b)=>a.emp.localeCompare(b.emp));
   const grid=document.getElementById('tiempo-grid');grid.innerHTML='';
-  if(!emps.length){grid.innerHTML='<div style="color:var(--gray);font-size:13px">Sin registros de tiempo para este periodo.</div>';return;}
-  emps.forEach(({emp,ei,totalM,rut,cie,porTarea,porCierre})=>{
+  if(!emps.length){grid.innerHTML='<div style="color:var(--gray);font-size:13px">Sin registros de tiempo.</div>';return;}
+  emps.forEach(({emp,ei,totalM,rut,cie,porTarea,porCierre,ej})=>{
     const card=document.createElement('div');card.className='tiempo-card';
+    const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
+    const sublabel=sort==='ejercicio'&&ej?`Ejercicio: ${ej.numero}`:yr;
     const tareasHtml=porTarea.map(x=>`<div class="stat-row"><span>${x.t}</span><span class="stat-val">${fmtMin(x.m)}</span></div>`).join('');
     const cierreHtml=porCierre.map(x=>`<div class="stat-row"><span style="color:var(--purple)">${x.t}</span><span class="stat-val" style="color:var(--purple)">${fmtMin(x.m)}</span></div>`).join('');
     card.innerHTML=`
       <div class="tiempo-card-header">
-        <div><div class="tiempo-emp-name">${emp}</div><div style="font-size:11px;color:var(--gray);margin-top:2px">${filtroMes==='todos'?yr:MESES[parseInt(filtroMes)]}</div></div>
+        <div><div class="tiempo-emp-name">${emp}</div><div style="font-size:11px;color:var(--gray);margin-top:2px">${sublabel}</div></div>
         <span class="tiempo-total-badge">${fmtMin(totalM)}</span>
       </div>
       <div class="tiempo-sub">
@@ -958,7 +1107,10 @@ function renderTiempos(){
         <div class="tiempo-sub-item"><div class="tiempo-sub-label">Cierre</div><div class="tiempo-sub-val" style="color:var(--purple)">${fmtMin(cie)}</div></div>
       </div>
       ${tareasHtml||cierreHtml?`<div style="border-top:0.5px solid var(--border);padding-top:.5rem">${tareasHtml}${cierreHtml?`<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;padding:4px 0 2px">Tareas de cierre</div>${cierreHtml}`:''}</div>`:''}
-      <div style="margin-top:.5rem;text-align:right"><button class="btn-ghost btn-sm" onclick="openTrabajo(${ei},${MES_ACTUAL},${yr})" style="font-size:11px"><i class="ti ti-pencil"></i> Cargar trabajo</button></div>`;
+      <div style="margin-top:.5rem;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-ghost btn-sm" onclick="openTrabajo(${ei},${MES_ACTUAL},${yr})" style="font-size:11px"><i class="ti ti-pencil"></i> Cargar trabajo</button>
+        ${ejIdx>=0?`<button class="btn-ghost btn-sm" onclick="generarPDF(${ejIdx})" style="font-size:11px;color:var(--red)"><i class="ti ti-file-type-pdf"></i> PDF</button>`:''}
+      </div>`;
     grid.appendChild(card);
   });
 }
@@ -971,7 +1123,7 @@ function renderAnual(){
   const avg=Math.round(MESES.reduce((a,_,m)=>a+pctMes(m),0)/12*100);
   const totalMins=totalMinsAll(activeYear);
   document.getElementById('kpi-anual').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Tareas hechas</div><div class="kpi-val" style="color:var(--green2)">${totalH}</div><div class="kpi-sub">${activeYear}</div></div>
+    <div class="kpi"><div class="kpi-label">Tareas hechas</div><div class="kpi-val" style="color:var(--green2)">${totalH}</div></div>
     <div class="kpi"><div class="kpi-label">Pendientes</div><div class="kpi-val" style="color:var(--red)">${totalP}</div></div>
     <div class="kpi"><div class="kpi-label">Meses trabajados</div><div class="kpi-val">${mC}/12</div></div>
     <div class="kpi"><div class="kpi-label">Promedio anual</div><div class="kpi-val" style="color:var(--accent)">${avg}%</div></div>
@@ -1031,6 +1183,48 @@ function eliminarTarea(i){
   markUnsaved();saveNow();renderConfig();toast(`"${n}" eliminada`);
 }
 
+// ═══ GENERAR PDF ═══
+function generarPDF(ejIdx){
+  const ej=data.ejercicios[ejIdx];if(!ej){toast('Ejercicio no encontrado',true);return;}
+  const empNombre=EMPRESAS[ej.emp]||'Empresa';
+  const mesesEj=getMesesEj(ej)||[];
+  const minsEj=totalMinsEjercicio(ej);
+  const tiemposTareas=TAREAS.map((t,ti)=>{
+    const mins=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0),0);
+    const estados=mesesEj.map(({mes,anio})=>getE(mes,ej.emp,ti,anio)).filter(Boolean);
+    const estado=estados.includes('Hecho')?'Hecho':estados.includes('Pendiente')?'Pendiente':estados[0]||'—';
+    return{nombre:t,mins,estado};
+  });
+  const tiemposCierre=(ej.tareascierre||[]).map((tc,ci)=>{
+    const mins=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes&&r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0),0);
+    return{nombre:tc.nombre,mins,estado:getCierreE(ejIdx,ci)||'—'};
+  });
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const filaRut=tiemposTareas.map(t=>`<tr><td>${t.nombre}</td><td style="text-align:center">${t.estado==='Hecho'?'✅':t.estado==='No Corresponde'?'—':t.estado}</td><td style="text-align:right;font-weight:600">${fmtMin(t.mins)||'--'}</td></tr>`).join('');
+  const filaCierre=tiemposCierre.map(t=>`<tr style="background:#f9f0ff"><td>${t.nombre}</td><td style="text-align:center">${t.estado==='Hecho'?'✅':t.estado==='No Corresponde'?'—':t.estado}</td><td style="text-align:right;font-weight:600">${fmtMin(t.mins)||'--'}</td></tr>`).join('');
+  const avanceMeses=mesesEj.map(({mes,anio})=>{const pct=Math.round(pctEmpMesYr(mes,ej.emp,anio)*100);const mins=tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes).reduce((a,r)=>a+r.mins,0);return`<tr><td>${MESES[mes]} ${anio}</td><td style="text-align:center">${pct}%</td><td style="text-align:right">${fmtMin(mins)||'--'}</td></tr>`;}).join('');
+  const estadoBadge=ej.cerrado?'<span style="background:#EDF2F7;color:#718096;padding:2px 10px;border-radius:99px;font-size:11px">🔒 Cerrado</span>':'<span style="background:#C6F6D5;color:#276749;padding:2px 10px;border-radius:99px;font-size:11px">📂 Abierto</span>';
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe ${empNombre}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a202c;margin:0;padding:20px}.logo{font-size:22px;font-weight:700;color:#1B2A4A;letter-spacing:-.5px}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:12px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end}.titulo{font-size:16px;font-weight:700;color:#1B2A4A;margin-bottom:2px}.subtitulo{font-size:11px;color:#718096}.kpis{display:flex;gap:12px;margin-bottom:18px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:20px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:18px}th{background:#1B2A4A;color:white;padding:7px 10px;text-align:left;font-size:11px}td{padding:6px 10px;border-bottom:1px solid #E2E8F0;font-size:11px}tr:last-child td{border-bottom:none}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.footer{margin-top:24px;border-top:1px solid #E2E8F0;padding-top:8px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:10px}}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096;margin-top:2px">Estudio Contable</div></div>
+  <div style="text-align:right"><div class="titulo">${empNombre} &nbsp; ${estadoBadge}</div><div class="subtitulo">${ej.numero}</div><div class="subtitulo">Inicio: ${fmtDate(ej.inicio)} — Cierre: ${fmtDate(ej.cierre)}</div></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-lbl">Tiempo total ejercicio</div><div class="kpi-v">${fmtMin(minsEj)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Meses del ejercicio</div><div class="kpi-v">${mesesEj.length}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tareas de cierre</div><div class="kpi-v">${(ej.tareascierre||[]).length}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Fecha de informe</div><div class="kpi-v" style="font-size:13px">${fechaHoy}</div></div>
+  </div>
+  <div class="sec-title">Tareas rutinarias</div>
+  <table><thead><tr><th>Tarea</th><th style="text-align:center">Estado</th><th style="text-align:right">Tiempo total ejercicio</th></tr></thead><tbody>${filaRut}</tbody></table>
+  ${tiemposCierre.length?`<div class="sec-title">Tareas de cierre de balance</div><table><thead><tr><th>Tarea</th><th style="text-align:center">Estado</th><th style="text-align:right">Tiempo total</th></tr></thead><tbody>${filaCierre}</tbody></table>`:''}
+  <div class="sec-title">Detalle por mes</div>
+  <table><thead><tr><th>Mes</th><th style="text-align:center">Avance</th><th style="text-align:right">Tiempo</th></tr></thead><tbody>${avanceMeses}</tbody></table>
+  ${ej.obs?`<div class="sec-title">Observaciones</div><p style="font-size:11px;color:#4A5568;font-style:italic">${ej.obs}</p>`:''}
+  <div class="footer">Generado el ${fechaHoy} · Grupo Pressacco — Estudio Contable · Uso interno</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);toast(`PDF generado para ${empNombre}`);
+}
+
 // ═══ NAVEGACION ═══
 function renderAll(){
   if(activePanel==='dashboard')renderDashboard();
@@ -1047,10 +1241,10 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
-function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoMesFiltro();}
+function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();}
 loadData().then(()=>{
   document.getElementById('hdate').textContent=HOY.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   init();renderDashboard();startAutoBackup();suscribirCambiosRemotos();

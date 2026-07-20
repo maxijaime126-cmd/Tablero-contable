@@ -467,6 +467,7 @@ let data={empresas:[],tareas_nombres:[],anos:{},ejercicios:[]};
 const SUPABASE_URL = "https://ovmtacwcrxfxtxsggbxt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_llgiKHW2EOOTiP4haWewFg_Vubpj01W";
 const ROW_ID = "estudio"; // fila unica compartida por todo el estudio
+const SESSION_ID = (crypto.randomUUID ? crypto.randomUUID() : ('sess_'+Math.random().toString(36).slice(2)+Date.now()));
 let sb = null;
 let lastKnownUpdatedAt = null;
 let applyingRemote = false;
@@ -496,7 +497,7 @@ async function saveNow(silent=false){
   if(!silent&&btn){btn.className='save-btn saving';document.getElementById('save-lbl').textContent='Guardando...';}
   data.empresas=[...EMPRESAS];data.tareas_nombres=[...TAREAS];
   const nowIso=new Date().toISOString();
-  const {error}=await sb.from('tablero').upsert({id:ROW_ID,data:data,updated_at:nowIso});
+  const {error}=await sb.from('tablero').upsert({id:ROW_ID,data:data,updated_at:nowIso,last_editor:SESSION_ID});
   if(error){
     if(btn){btn.className='save-btn unsaved';document.getElementById('save-lbl').textContent='Error al guardar';}
     toast('No se pudo guardar en la nube: '+error.message,true);
@@ -559,6 +560,8 @@ function suscribirCambiosRemotos(){
   sb.channel('tablero-cambios')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'tablero',filter:`id=eq.${ROW_ID}`},(payload)=>{
       const nuevo=payload.new && payload.new.updated_at;
+      const editor=payload.new && payload.new.last_editor;
+      if(editor && editor===SESSION_ID)return; // fue este mismo dispositivo, ignorar
       if(nuevo && nuevo!==lastKnownUpdatedAt){
         document.getElementById('remote-banner').style.display='flex';
       }
@@ -1235,9 +1238,10 @@ function renderAll(){
   else if(activePanel==='config')renderConfig();
 }
 function showPanel(name,btn){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
+  const target=document.getElementById('panel-'+name);
+  target.classList.add('active');target.style.display='block';
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }

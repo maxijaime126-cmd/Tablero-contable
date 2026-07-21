@@ -278,6 +278,7 @@ button:hover{background:var(--grayl)}
         <div class="sec-divider" style="color:var(--purple)"><i class="ti ti-file-check" style="font-size:12px;color:var(--purple)"></i> Tareas de cierre de balance</div>
         <div id="cierre-rows"></div>
         <button class="btn-purple btn-sm" style="margin-top:4px" onclick="openCierreModal()"><i class="ti ti-plus"></i> Agregar tarea de cierre</button>
+        <button class="btn-ghost btn-sm" style="margin-top:4px" onclick="openAplicarPlantillaModal()"><i class="ti ti-copy"></i> Aplicar plantilla</button>
         <div class="sec-divider" style="color:var(--orange)"><i class="ti ti-calendar-time" style="font-size:12px;color:var(--orange)"></i> Tareas periodicas (no mensuales)</div>
         <div id="periodica-rows"></div>
         <button class="btn-warn btn-sm" style="margin-top:4px" onclick="openPeriodicaModal()"><i class="ti ti-plus"></i> Agregar tarea periodica</button>
@@ -407,10 +408,17 @@ button:hover{background:var(--grayl)}
         <div class="cfg-box">
           <div id="tarea-list"></div>
           <div class="cfg-footer">
-            <input type="text" id="new-tarea" placeholder="Nueva tarea" style="flex:1;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit">
-            <button class="btn-primary btn-sm" onclick="addTarea()"><i class="ti ti-plus"></i> Agregar</button>
+            <button class="btn-primary btn-sm" onclick="openNuevaTareaModal()"><i class="ti ti-plus"></i> Agregar tarea</button>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="sec" style="margin-top:1.25rem">Plantillas de tareas de cierre</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:.5rem">Guarda un conjunto de tareas de cierre (ej. para SRL, Cooperativas) y aplicalo con un clic a cualquier ejercicio.</div>
+    <div class="cfg-box">
+      <div id="plantilla-list"></div>
+      <div class="cfg-footer">
+        <button class="btn-primary btn-sm" onclick="openPlantillaModal()"><i class="ti ti-plus"></i> Nueva plantilla</button>
       </div>
     </div>
     <div class="sec" style="margin-top:1.25rem">Anos registrados</div>
@@ -503,6 +511,62 @@ button:hover{background:var(--grayl)}
     <div class="modal-btns">
       <button onclick="closeTareasEmpModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveTareasEmpModal()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLANTILLA DE CIERRE -->
+<div class="modal-overlay" id="modal-plantilla">
+  <div class="modal">
+    <h3 id="modal-plantilla-title">Nueva plantilla</h3>
+    <div class="frow"><label>Nombre de la plantilla</label><input type="text" id="plantilla-nombre" placeholder="Ej: SRL estandar, Cooperativa..."></div>
+    <div class="frow">
+      <label>Tareas de cierre incluidas</label>
+      <div id="plantilla-tareas-list"></div>
+      <button class="btn-ghost btn-sm" style="margin-top:6px" onclick="addPlantillaTareaRow()"><i class="ti ti-plus"></i> Agregar tarea</button>
+    </div>
+    <div class="modal-btns">
+      <button onclick="closePlantillaModal()">Cancelar</button>
+      <button class="btn-danger" id="plantilla-del-btn" style="display:none" onclick="deletePlantilla()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="savePlantilla()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL APLICAR PLANTILLA -->
+<div class="modal-overlay" id="modal-aplicar-plantilla">
+  <div class="modal">
+    <h3>Aplicar plantilla</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem" id="aplicar-plantilla-emp"></div>
+    <div id="aplicar-plantilla-list"></div>
+    <div class="modal-btns">
+      <button onclick="closeAplicarPlantillaModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA TAREA RUTINARIA (con alcance) -->
+<div class="modal-overlay" id="modal-nueva-tarea">
+  <div class="modal">
+    <h3>Nueva tarea rutinaria</h3>
+    <div class="frow"><label>Nombre de la tarea</label><input type="text" id="nuevatarea-nombre" placeholder="Ej: Cuotas sindicales"></div>
+    <div class="frow"><label>¿A que empresas aplica?</label>
+      <select id="nuevatarea-alcance" onchange="toggleNuevaTareaEmpresas()">
+        <option value="todas">Todas las empresas</option>
+        <option value="especificas">Elegir empresas especificas</option>
+      </select>
+    </div>
+    <div class="frow" id="nuevatarea-empresas-wrap" style="display:none">
+      <label>Empresas</label>
+      <div class="row-gap" style="margin-bottom:.4rem">
+        <button class="btn-ghost btn-sm" onclick="marcarTodasNuevaTareaEmp(true)">Marcar todas</button>
+        <button class="btn-ghost btn-sm" onclick="marcarTodasNuevaTareaEmp(false)">Desmarcar todas</button>
+      </div>
+      <div class="cfg-box"><div id="nuevatarea-empresas-list"></div></div>
+    </div>
+    <div class="modal-btns">
+      <button onclick="closeNuevaTareaModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveNuevaTarea()"><i class="ti ti-check"></i> Guardar</button>
     </div>
   </div>
 </div>
@@ -615,6 +679,7 @@ async function loadData(){
   if(!data.anos[ANO_ACTUAL])data.anos[ANO_ACTUAL]={tareas:{},tiempos:[]};
   if(!data.tareasEmpresa)data.tareasEmpresa={};
   if(!data.periodicas)data.periodicas=[];
+  if(!data.plantillasCierre)data.plantillasCierre=[];
   data.ejercicios.forEach(ej=>{
     if(!ej.tareascierre)ej.tareascierre=[];
     if(!ej.estadoscierre)ej.estadoscierre=[];
@@ -677,6 +742,7 @@ function importData(){
       if(!data.ejercicios)data.ejercicios=[];
       if(!data.tareasEmpresa)data.tareasEmpresa={};
       if(!data.periodicas)data.periodicas=[];
+      if(!data.plantillasCierre)data.plantillasCierre=[];
       data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];if(!ej.estadoscierre)ej.estadoscierre=[];if(ej.cerrado===undefined)ej.cerrado=false;});
       if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
       if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
@@ -1438,6 +1504,16 @@ function renderConfig(){
   TAREAS.forEach((t,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${t.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('tarea',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-danger btn-sm" onclick="eliminarTarea(${i})"><i class="ti ti-trash"></i></button>`;tl.appendChild(row);});
   const yg=document.getElementById('year-grid');yg.innerHTML='';
   getYears().forEach(y=>{const h=Object.values(data.anos[y].tareas||{}).filter(v=>v==='Hecho').length;const div=document.createElement('div');div.className='year-card'+(y===activeYear?' ay':'');div.innerHTML=`<button class="btn-danger btn-sm" style="position:absolute;top:5px;right:5px;padding:2px 5px" onclick="event.stopPropagation();deleteYear(${y})"><i class="ti ti-trash"></i></button><div class="year-num">${y}</div><div class="year-sub">${h} hechas</div>`;div.addEventListener('click',()=>{activeYear=y;document.getElementById('year-sel').value=y;renderAll();renderConfig();});yg.appendChild(div);});
+  renderPlantillas();
+}
+function renderPlantillas(){
+  const el=document.getElementById('plantilla-list');if(!el)return;el.innerHTML='';
+  if(!data.plantillasCierre.length){el.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.6rem 1rem">No hay plantillas creadas todavia.</div>';return;}
+  data.plantillasCierre.forEach((pl,i)=>{
+    const row=document.createElement('div');row.className='cfg-row';
+    row.innerHTML=`<span style="flex:1;font-size:13px;font-weight:600">${pl.nombre}</span><span style="font-size:11px;color:var(--gray);margin-right:6px">${pl.tareas.length} tarea(s)</span><button class="btn-ghost btn-sm" onclick="openPlantillaModal(${i})"><i class="ti ti-pencil"></i></button><button class="btn-danger btn-sm" onclick="editingPlantillaIdx=${i};deletePlantilla()"><i class="ti ti-trash"></i></button>`;
+    el.appendChild(row);
+  });
 }
 function renombrar(tipo,input,idx){
   input.style.borderColor='transparent';input.style.background='transparent';
@@ -1469,6 +1545,71 @@ function saveTareasEmpModal(){
 function marcarTodasTareasEmpModal(valor){
   document.querySelectorAll('#tareasemp-list input[type=checkbox]').forEach(c=>c.checked=valor);
 }
+
+// ═══ PLANTILLAS DE TAREAS DE CIERRE ═══
+let editingPlantillaIdx=null;
+function openPlantillaModal(idx=null){
+  editingPlantillaIdx=idx;
+  const pl=idx!==null?data.plantillasCierre[idx]:null;
+  document.getElementById('modal-plantilla-title').textContent=idx!==null?'Editar plantilla':'Nueva plantilla';
+  document.getElementById('plantilla-del-btn').style.display=idx!==null?'inline-flex':'none';
+  document.getElementById('plantilla-nombre').value=pl?pl.nombre:'';
+  const list=document.getElementById('plantilla-tareas-list');list.innerHTML='';
+  if(pl&&pl.tareas.length)pl.tareas.forEach(t=>addPlantillaTareaRow(t.nombre));
+  else addPlantillaTareaRow('');
+  document.getElementById('modal-plantilla').classList.add('open');
+}
+function closePlantillaModal(){document.getElementById('modal-plantilla').classList.remove('open');editingPlantillaIdx=null;}
+function addPlantillaTareaRow(valor=''){
+  const list=document.getElementById('plantilla-tareas-list');
+  const row=document.createElement('div');row.className='row-gap';row.style.marginBottom='6px';
+  row.innerHTML=`<input type="text" class="plantilla-tarea-inp" value="${valor.replace(/"/g,'&quot;')}" placeholder="Ej: Ajuste por inflacion" style="flex:1;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit"><button class="btn-ghost btn-sm" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>`;
+  list.appendChild(row);
+}
+function savePlantilla(){
+  const nombre=document.getElementById('plantilla-nombre').value.trim();
+  if(!nombre){toast('Ingresa un nombre para la plantilla',true);return;}
+  const tareas=[...document.querySelectorAll('.plantilla-tarea-inp')].map(i=>i.value.trim()).filter(Boolean).map(nombre=>({nombre}));
+  if(!tareas.length){toast('Agrega al menos una tarea',true);return;}
+  if(editingPlantillaIdx!==null){
+    data.plantillasCierre[editingPlantillaIdx].nombre=nombre;
+    data.plantillasCierre[editingPlantillaIdx].tareas=tareas;
+  } else {
+    data.plantillasCierre.push({nombre,tareas});
+  }
+  markUnsaved();saveNow();closePlantillaModal();renderPlantillas();toast('Plantilla guardada');
+}
+function deletePlantilla(){
+  if(editingPlantillaIdx===null)return;
+  if(!confirm('Eliminar esta plantilla?'))return;
+  data.plantillasCierre.splice(editingPlantillaIdx,1);
+  markUnsaved();saveNow();closePlantillaModal();renderPlantillas();toast('Plantilla eliminada');
+}
+function openAplicarPlantillaModal(){
+  if(workEjIdx===null){toast('Esta empresa no tiene ejercicio abierto. Agrega uno primero.',true);return;}
+  if(!data.plantillasCierre.length){toast('Todavia no hay plantillas creadas. Andá a Config para crear una.',true);return;}
+  document.getElementById('aplicar-plantilla-emp').textContent=`${EMPRESAS[workEmpIdx]} · ${data.ejercicios[workEjIdx].numero}`;
+  const list=document.getElementById('aplicar-plantilla-list');list.innerHTML='';
+  data.plantillasCierre.forEach((pl,i)=>{
+    const row=document.createElement('div');row.className='cfg-row';
+    row.innerHTML=`<span style="flex:1;font-size:13px;font-weight:600">${pl.nombre}</span><span style="font-size:11px;color:var(--gray);margin-right:6px">${pl.tareas.length} tarea(s)</span><button class="btn-primary btn-sm" onclick="aplicarPlantilla(${i})">Aplicar</button>`;
+    list.appendChild(row);
+  });
+  document.getElementById('modal-aplicar-plantilla').classList.add('open');
+}
+function closeAplicarPlantillaModal(){document.getElementById('modal-aplicar-plantilla').classList.remove('open');}
+function aplicarPlantilla(idx){
+  const pl=data.plantillasCierre[idx];
+  const ej=data.ejercicios[workEjIdx];
+  if(!ej.tareascierre)ej.tareascierre=[];
+  const existentes=ej.tareascierre.map(t=>t.nombre.toLowerCase());
+  let agregadas=0;
+  pl.tareas.forEach(t=>{
+    if(!existentes.includes(t.nombre.toLowerCase())){ej.tareascierre.push({nombre:t.nombre,desc:''});agregadas++;}
+  });
+  markUnsaved();saveNow();closeAplicarPlantillaModal();renderTrabajoContent();
+  toast(agregadas?`Se agregaron ${agregadas} tarea(s) de la plantilla`:'Esas tareas ya estaban cargadas');
+}
 function addEmpresa(){const inp=document.getElementById('new-emp'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}EMPRESAS.push(val);markUnsaved();inp.value='';renderConfig();buildWorkEmpSel();toast(`"${val}" agregada`);}
 function eliminarEmpresa(i){
   if(!confirm(`Eliminar "${EMPRESAS[i]}"?`))return;const n=EMPRESAS[i];EMPRESAS.splice(i,1);
@@ -1478,7 +1619,49 @@ function eliminarEmpresa(i){
   const nte={};Object.entries(data.tareasEmpresa||{}).forEach(([k,v])=>{const e=Number(k);if(e===i)return;nte[e>i?e-1:e]=v;});data.tareasEmpresa=nte;
   markUnsaved();saveNow();renderConfig();buildWorkEmpSel();toast(`"${n}" eliminada`);
 }
-function addTarea(){const inp=document.getElementById('new-tarea'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}TAREAS.push(val);markUnsaved();inp.value='';renderConfig();toast(`"${val}" agregada`);}
+function openNuevaTareaModal(){
+  document.getElementById('nuevatarea-nombre').value='';
+  document.getElementById('nuevatarea-alcance').value='todas';
+  const list=document.getElementById('nuevatarea-empresas-list');list.innerHTML='';
+  EMPRESAS.forEach((e,i)=>{
+    const row=document.createElement('label');row.className='cfg-row';row.style.cursor='pointer';
+    row.innerHTML=`<input type="checkbox" data-idx="${i}" style="margin-right:4px"> <span style="flex:1">${e}</span>`;
+    list.appendChild(row);
+  });
+  toggleNuevaTareaEmpresas();
+  document.getElementById('modal-nueva-tarea').classList.add('open');
+}
+function closeNuevaTareaModal(){document.getElementById('modal-nueva-tarea').classList.remove('open');}
+function toggleNuevaTareaEmpresas(){
+  const esp=document.getElementById('nuevatarea-alcance').value==='especificas';
+  document.getElementById('nuevatarea-empresas-wrap').style.display=esp?'block':'none';
+}
+function marcarTodasNuevaTareaEmp(valor){
+  document.querySelectorAll('#nuevatarea-empresas-list input[type=checkbox]').forEach(c=>c.checked=valor);
+}
+function saveNuevaTarea(){
+  const nombre=document.getElementById('nuevatarea-nombre').value.trim();
+  if(!nombre){toast('Escribe un nombre',true);return;}
+  const alcance=document.getElementById('nuevatarea-alcance').value;
+  let elegidas=null;
+  if(alcance==='especificas'){
+    elegidas=[...document.querySelectorAll('#nuevatarea-empresas-list input[type=checkbox]')].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+    if(!elegidas.length){toast('Elegi al menos una empresa',true);return;}
+  }
+  if(!data.tareasEmpresa)data.tareasEmpresa={};
+  // materializar la lista de cada empresa ANTES de agregar la tarea nueva, para que
+  // las que no fueron elegidas no la reciban por defecto
+  EMPRESAS.forEach((_,e)=>{ if(!data.tareasEmpresa[e]) data.tareasEmpresa[e]=TAREAS.map((_,i)=>i); });
+  const newIdx=TAREAS.length;
+  TAREAS.push(nombre);
+  if(alcance==='todas'){
+    EMPRESAS.forEach((_,e)=>{ data.tareasEmpresa[e].push(newIdx); });
+  } else {
+    elegidas.forEach(e=>{ data.tareasEmpresa[e].push(newIdx); });
+  }
+  markUnsaved();saveNow();closeNuevaTareaModal();renderConfig();buildWorkEmpSel();
+  toast(alcance==='todas'?`"${nombre}" agregada para todas las empresas`:`"${nombre}" agregada solo para ${elegidas.length} empresa(s)`);
+}
 function eliminarTarea(i){
   if(!confirm(`Eliminar "${TAREAS[i]}"?`))return;const n=TAREAS[i];TAREAS.splice(i,1);
   Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(t===i)return;nt[`${m}_${e}_${t>i?t-1:t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>!(r.tipo==='rutinaria'&&r.tarea===i)).map(r=>r.tipo==='rutinaria'&&r.tarea>i?{...r,tarea:r.tarea-1}:r);});
@@ -1546,7 +1729,7 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
 function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();}

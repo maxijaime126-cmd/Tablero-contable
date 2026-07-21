@@ -84,9 +84,11 @@ button:hover{background:var(--grayl)}
 .tarea-row.tr-pendiente{border-color:#FC8181;background:#FFF5F5}
 .tarea-row.tr-nc{background:var(--grayl);opacity:.8}
 .tarea-row.tr-cierre{border-left:3px solid var(--purple)}
+.tarea-row.tr-periodica{border-left:3px solid var(--orange)}
 .tarea-name{font-size:13px;font-weight:600;color:#2D3748;min-width:105px;flex-shrink:0}
 .tarea-type{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px}
 .tt-cierre{background:var(--purplel);color:var(--purple)}
+.tt-periodica{background:var(--orangel);color:var(--orange)}
 .estado-btns{display:flex;gap:4px;flex-wrap:wrap}
 .ebtn{padding:4px 11px;font-size:11px;font-weight:700;border-radius:99px;border:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:3px;opacity:.45}
 .ebtn:hover{opacity:.75;transform:scale(1.03)}
@@ -260,6 +262,9 @@ button:hover{background:var(--grayl)}
         <div class="sec-divider" style="color:var(--purple)"><i class="ti ti-file-check" style="font-size:12px;color:var(--purple)"></i> Tareas de cierre de balance</div>
         <div id="cierre-rows"></div>
         <button class="btn-purple btn-sm" style="margin-top:4px" onclick="openCierreModal()"><i class="ti ti-plus"></i> Agregar tarea de cierre</button>
+        <div class="sec-divider" style="color:var(--orange)"><i class="ti ti-calendar-time" style="font-size:12px;color:var(--orange)"></i> Tareas periodicas (no mensuales)</div>
+        <div id="periodica-rows"></div>
+        <button class="btn-warn btn-sm" style="margin-top:4px" onclick="openPeriodicaModal()"><i class="ti ti-plus"></i> Agregar tarea periodica</button>
         <div class="row-gap" style="margin-top:.75rem">
           <button class="btn-success btn-sm" onclick="marcarTodas('Hecho')"><i class="ti ti-checks"></i> Todas Hecho</button>
           <button class="btn-warn btn-sm" onclick="marcarTodas('Pendiente')"><i class="ti ti-clock"></i> Todas Pendiente</button>
@@ -426,6 +431,51 @@ button:hover{background:var(--grayl)}
   </div>
 </div>
 
+<!-- MODAL TAREA PERIODICA -->
+<div class="modal-overlay" id="modal-periodica">
+  <div class="modal">
+    <h3 id="modal-periodica-title">Tarea periodica</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem" id="modal-periodica-emp"></div>
+    <div class="frow"><label>Nombre de la tarea</label>
+      <input type="text" id="periodica-nombre" placeholder="Ej: Ganancias Personas Fisicas, Bienes Personales..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Periodicidad</label>
+        <select id="periodica-periodicidad">
+          <option value="anual">Anual</option>
+          <option value="semestral">Semestral</option>
+          <option value="trimestral">Trimestral</option>
+        </select>
+      </div>
+      <div class="frow"><label>Proximo vencimiento</label><input type="date" id="periodica-vencimiento"></div>
+    </div>
+    <div class="frow"><label>Observaciones (opcional)</label>
+      <textarea id="periodica-obs" rows="2" placeholder="Detalle adicional..."></textarea></div>
+    <div class="modal-btns">
+      <button onclick="closePeriodicaModal()">Cancelar</button>
+      <button class="btn-danger" id="periodica-del-btn" style="display:none" onclick="deletePeriodica()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="savePeriodica()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAREAS RUTINARIAS POR EMPRESA -->
+<div class="modal-overlay" id="modal-tareasemp">
+  <div class="modal">
+    <h3>Tareas rutinarias de esta empresa</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem" id="tareasemp-emp"></div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:.5rem">Elegi que tareas mensuales le corresponden a esta empresa (por ejemplo, un sindicato no tiene Compras/Ventas).</div>
+    <div class="row-gap" style="margin-bottom:.5rem">
+      <button class="btn-ghost btn-sm" onclick="marcarTodasTareasEmpModal(true)">Marcar todas</button>
+      <button class="btn-ghost btn-sm" onclick="marcarTodasTareasEmpModal(false)">Desmarcar todas</button>
+    </div>
+    <div class="cfg-box"><div id="tareasemp-list"></div></div>
+    <div class="modal-btns">
+      <button onclick="closeTareasEmpModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveTareasEmpModal()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR TIEMPO -->
 <div class="modal-overlay" id="modal-edit-tiempo">
   <div class="modal">
@@ -532,6 +582,8 @@ async function loadData(){
   if(!data.ejercicios)data.ejercicios=[];
   if(!data.anos)data.anos={};
   if(!data.anos[ANO_ACTUAL])data.anos[ANO_ACTUAL]={tareas:{},tiempos:[]};
+  if(!data.tareasEmpresa)data.tareasEmpresa={};
+  if(!data.periodicas)data.periodicas=[];
   data.ejercicios.forEach(ej=>{
     if(!ej.tareascierre)ej.tareascierre=[];
     if(!ej.estadoscierre)ej.estadoscierre=[];
@@ -592,6 +644,8 @@ function importData(){
       if(src){data=imp;if(!data.anos&&data.años){data.anos={};Object.entries(data.años).forEach(([y,v])=>data.anos[y]=v);}}
       else throw 0;
       if(!data.ejercicios)data.ejercicios=[];
+      if(!data.tareasEmpresa)data.tareasEmpresa={};
+      if(!data.periodicas)data.periodicas=[];
       data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];if(!ej.estadoscierre)ej.estadoscierre=[];if(ej.cerrado===undefined)ej.cerrado=false;});
       if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
       if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
@@ -616,16 +670,23 @@ function getCierreE(ejIdx,ci){return data.ejercicios[ejIdx]?.estadoscierre?.[ci]
 function setCierreE(ejIdx,ci,v){if(!data.ejercicios[ejIdx].estadoscierre)data.ejercicios[ejIdx].estadoscierre=[];data.ejercicios[ejIdx].estadoscierre[ci]=v;markUnsaved();}
 function ejsDeEmpresa(empIdx){return data.ejercicios.map((e,i)=>({...e,_idx:i})).filter(e=>e.emp===empIdx);}
 function ejActivoDeEmpresa(empIdx){const ejs=ejsDeEmpresa(empIdx);return ejs.find(e=>!e.cerrado)||ejs[ejs.length-1]||null;}
-function pctEmpMesYr(m,e,yr){let d=0,nc=0;for(let t=0;t<TAREAS.length;t++){const s=getE(m,e,t,yr);if(s==='Hecho')d++;else if(s==='No Corresponde')nc++;}const den=TAREAS.length-nc;return den<=0?1:d/den;}
+// tareas rutinarias que aplican a una empresa: si no tiene lista propia, aplican todas (compatibilidad)
+function tareasDeEmpresa(empIdx){
+  const lista=data.tareasEmpresa&&data.tareasEmpresa[empIdx];
+  if(!lista)return TAREAS.map((_,i)=>i);
+  return lista.filter(i=>i<TAREAS.length);
+}
+function pctEmpMesYr(m,e,yr){const idxs=tareasDeEmpresa(e);let d=0,nc=0;for(const t of idxs){const s=getE(m,e,t,yr);if(s==='Hecho')d++;else if(s==='No Corresponde')nc++;}const den=idxs.length-nc;return den<=0?1:d/den;}
 function pctMes(m){let s=0;for(let e=0;e<EMPRESAS.length;e++)s+=pctEmpMesYr(m,e,activeYear);return s/EMPRESAS.length;}
-function countMes(m,est){let c=0;for(let e=0;e<EMPRESAS.length;e++)for(let t=0;t<TAREAS.length;t++)if(getE(m,e,t)===est)c++;return c;}
+function countMes(m,est){let c=0;for(let e=0;e<EMPRESAS.length;e++)for(const t of tareasDeEmpresa(e))if(getE(m,e,t)===est)c++;return c;}
 function tiemposYr(yr){return getYD(yr||activeYear).tiempos||[];}
 function totalMinsEmpMesYr(e,m,yr){return tiemposYr(yr).filter(r=>r.emp===e&&r.mes===m).reduce((a,r)=>a+r.mins,0);}
 function totalMinsEmpYr(e,yr){return tiemposYr(yr).filter(r=>r.emp===e).reduce((a,r)=>a+r.mins,0);}
 function totalMinsMesYr(m,yr){return tiemposYr(yr).filter(r=>r.mes===m).reduce((a,r)=>a+r.mins,0);}
-function totalMinsTareaYr(t,yr){return tiemposYr(yr).filter(r=>r.tarea===t&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);}
+function totalMinsTareaYr(t,yr){return tiemposYr(yr).filter(r=>r.tarea===t&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);}
 function totalMinsCierreYr(yr){return tiemposYr(yr).filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);}
-function totalMinsRutinariaYr(yr){return tiemposYr(yr).filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);}
+function totalMinsRutinariaYr(yr){return tiemposYr(yr).filter(r=>r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);}
+function totalMinsPeriodicaYr(yr){return tiemposYr(yr).filter(r=>r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);}
 function totalMinsAll(yr){return tiemposYr(yr).reduce((a,r)=>a+r.mins,0);}
 function totalMinsEjercicio(ej){
   if(!ej)return 0;
@@ -644,6 +705,21 @@ function getMesesEj(ej){
   while(cur<=fin&&res.length<=24){res.push({mes:cur.getMonth(),anio:cur.getFullYear()});cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);}
   return res;
 }
+// ═══ TAREAS PERIODICAS (no mensuales, ej: Ganancias, Bienes Personales) ═══
+function periodicasDeEmpresa(empIdx){return data.periodicas.map((p,i)=>({...p,_idx:i})).filter(p=>p.emp===empIdx);}
+function sumarPeriodo(fechaIso,periodicidad){
+  const d=parseDate(fechaIso);
+  if(periodicidad==='trimestral')d.setMonth(d.getMonth()+3);
+  else if(periodicidad==='semestral')d.setMonth(d.getMonth()+6);
+  else d.setFullYear(d.getFullYear()+1); // anual por defecto
+  return d.toISOString().slice(0,10);
+}
+function renovarPeriodica(idx){
+  const p=data.periodicas[idx];if(!p)return;
+  p.estado='Pendiente';
+  p.vencimiento=sumarPeriodo(p.vencimiento,p.periodicidad);
+  markUnsaved();saveNow();renderTrabajoContent();toast('Tarea periodica renovada para el proximo vencimiento');
+}
 function toast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.background=err?'#742A2A':'#1A202C';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function badgeCls(p){return p>=1?'b100':p>=.75?'b75':p>.05?'b50':'b0';}
 function estadoClass(est){return est==='Hecho'?'tr-hecho':est==='Pendiente'?'tr-pendiente':est==='No Corresponde'?'tr-nc':'';}
@@ -657,6 +733,7 @@ function renderDashboard(){
   const pct=pctMes(mes),mins=totalMinsMesYr(mes,activeYear),totalAnio=totalMinsAll(activeYear);
   const comp=EMPRESAS.filter((_,ei)=>Math.round(pctEmpMesYr(mes,ei,activeYear)*100)===100).length;
   const urg=data.ejercicios.filter(ej=>!ej.cerrado&&diasRestantes(ej.cierre)!==null&&diasRestantes(ej.cierre)>=0&&diasRestantes(ej.cierre)<=30).length;
+  const urgPer=data.periodicas.filter(p=>p.estado!=='Hecho'&&diasRestantes(p.vencimiento)!==null&&diasRestantes(p.vencimiento)<=30).length;
   document.getElementById('kpi-dash').innerHTML=`
     <div class="kpi"><div class="kpi-label">Empresas</div><div class="kpi-val">${EMPRESAS.length}</div><div class="kpi-sub">${comp} completadas</div></div>
     <div class="kpi"><div class="kpi-label">Hechas</div><div class="kpi-val" style="color:var(--green2)">${h}</div><div class="kpi-sub">${MESES[mes]}</div></div>
@@ -665,6 +742,7 @@ function renderDashboard(){
     <div class="kpi"><div class="kpi-label">Tiempo este mes</div><div class="kpi-val">${fmtMin(mins)}</div></div>
     <div class="kpi"><div class="kpi-label">Tiempo total ${activeYear}</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(totalAnio)}</div></div>
     ${urg?`<div class="kpi" style="border-color:#FC8181"><div class="kpi-label" style="color:var(--red)">Ejercicios urgentes</div><div class="kpi-val" style="color:var(--red)">${urg}</div><div class="kpi-sub">cierre en 30 dias</div></div>`:''}
+    ${urgPer?`<div class="kpi" style="border-color:#F6AD55"><div class="kpi-label" style="color:var(--orange)">Periodicas urgentes</div><div class="kpi-val" style="color:var(--orange)">${urgPer}</div><div class="kpi-sub">vencen en 30 dias</div></div>`:''}
   `;
   const grid=document.getElementById('emp-grid');grid.innerHTML='';
   EMPRESAS.forEach((emp,ei)=>{
@@ -672,7 +750,7 @@ function renderDashboard(){
     const minsM=totalMinsEmpMesYr(ei,mes,activeYear),minsA=totalMinsEmpYr(ei,activeYear);
     const ej=ejActivoDeEmpresa(ei);
     const diasC=ej?diasRestantes(ej.cierre):null;
-    const dots=TAREAS.map((_,t)=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
+    const dots=tareasDeEmpresa(ei).map(t=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
     let ejHtml='';
     if(ej){
       const numEjs=ejsDeEmpresa(ei).length;
@@ -762,6 +840,7 @@ function renderTrabajoContent(){
   }
   renderTareaRows();
   renderCierreRows(ej,workEjIdx);
+  renderPeriodicaRows();
   renderWorkStats();
   buildTareaSels(ej,workEjIdx);
   renderHistorial();
@@ -769,12 +848,15 @@ function renderTrabajoContent(){
 
 function renderTareaRows(){
   const div=document.getElementById('tarea-rows');div.innerHTML='';
-  TAREAS.forEach((tarea,ti)=>{
+  const idxs=tareasDeEmpresa(workEmpIdx);
+  if(!idxs.length){div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">Esta empresa no tiene tareas rutinarias asignadas. Configuralas en Config → Empresas.</div>';return;}
+  idxs.forEach(ti=>{
+    const tarea=TAREAS[ti];
     const est=getE(workMes,workEmpIdx,ti,workMesYear);
-    const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+    const minsM=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.mes===workMes&&r.tarea===ti&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
     const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
     const mesesEj=getMesesEj(ej)||[];
-    const minsEj=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===workEmpIdx&&r.mes===mes&&r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0),0);
+    const minsEj=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===workEmpIdx&&r.mes===mes&&r.tarea===ti&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0),0);
     const row=document.createElement('div');row.className=`tarea-row ${estadoClass(est)}`;
     row.innerHTML=`
       <span class="tarea-name">${tarea}</span>
@@ -819,6 +901,43 @@ function renderCierreRows(ej,ejIdx){
   });
 }
 
+function renderPeriodicaRows(){
+  const div=document.getElementById('periodica-rows');if(!div)return;div.innerHTML='';
+  const items=periodicasDeEmpresa(workEmpIdx);
+  if(!items.length){
+    div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">No hay tareas periodicas cargadas para esta empresa (ej: Ganancias, Bienes Personales).</div>';return;
+  }
+  items.sort((a,b)=>(a.vencimiento||'').localeCompare(b.vencimiento||''));
+  items.forEach(p=>{
+    const idx=p._idx;
+    const est=p.estado||'';
+    const d=diasRestantes(p.vencimiento);
+    const mins=tiemposYr(activeYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='periodica'&&r.tarea===idx).reduce((a,r)=>a+r.mins,0);
+    let vencHtml='';
+    if(p.vencimiento){
+      const ec=d<0?'color:var(--red)':d<=30?'color:var(--orange)':'color:var(--gray)';
+      const et=d<0?`Vencido hace ${Math.abs(d)}d`:d===0?'Vence hoy':`Vence en ${d}d`;
+      vencHtml=`<span style="font-size:10px;${ec};font-weight:600;margin-left:6px">${fmtDate(p.vencimiento)} · ${et}</span>`;
+    }
+    const row=document.createElement('div');row.className=`tarea-row tr-periodica ${estadoClass(est)}`;
+    row.innerHTML=`
+      <span class="tarea-name">${p.nombre}<span class="tarea-type tt-periodica">${(p.periodicidad||'anual').toUpperCase()}</span>${vencHtml}</span>
+      <div class="estado-btns">
+        <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoPeriodica(${idx},'Hecho')">✅ Hecho</button>
+        <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoPeriodica(${idx},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoPeriodica(${idx},'No Corresponde')">— N/C</button>
+      </div>
+      <div class="tarea-time-area">
+        <input type="number" class="mins-inp" id="mins-p-${idx}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('periodica',${idx});this.value='';}">
+        <button class="btn-success btn-sm" onclick="addMinsRow('periodica',${idx})"><i class="ti ti-plus"></i></button>
+        <button class="btn-ghost btn-sm" onclick="openPeriodicaModal(${idx})"><i class="ti ti-pencil"></i></button>
+        ${est==='Hecho'?`<button class="btn-ghost btn-sm" onclick="renovarPeriodica(${idx})" title="Renovar para el proximo vencimiento"><i class="ti ti-repeat"></i></button>`:''}
+        <span class="tarea-acum">Acumulado:<b>${fmtMin(mins)}</b></span>
+      </div>`;
+    div.appendChild(row);
+  });
+}
+
 function setEstadoWork(ti,estado){
   setE(workMes,workEmpIdx,ti,estado,workMesYear);
   renderTareaRows();renderWorkStats();refreshActivePill();
@@ -827,39 +946,48 @@ function setEstadoCierre(ejIdx,ci,estado){
   setCierreE(ejIdx,ci,estado);
   const ej=data.ejercicios[ejIdx];renderCierreRows(ej,ejIdx);renderWorkStats();
 }
+function setEstadoPeriodica(idx,estado){
+  data.periodicas[idx].estado=estado;markUnsaved();renderPeriodicaRows();renderWorkStats();
+}
 function refreshActivePill(){
   document.querySelectorAll('.mes-pill').forEach(p=>{
     if(p.classList.contains('active')){const pct=pctEmpMesYr(workMes,workEmpIdx,workMesYear);p.className='mes-pill active '+(pct>=1?'mp-ok':pct>0?'mp-wip':'mp-empty');}
   });
 }
 function marcarTodas(estado){
-  for(let t=0;t<TAREAS.length;t++)setE(workMes,workEmpIdx,t,estado,workMesYear);
+  tareasDeEmpresa(workEmpIdx).forEach(t=>setE(workMes,workEmpIdx,t,estado,workMesYear));
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   if(ej&&ej.tareascierre){if(!ej.estadoscierre)ej.estadoscierre=[];ej.tareascierre.forEach((_,ci)=>{ej.estadoscierre[ci]=estado;});}
   markUnsaved();renderTareaRows();renderCierreRows(ej,workEjIdx);renderWorkStats();toast(`Todas marcadas: ${estado}`);
 }
 function addMinsRow(tipo,idx){
-  const inp=document.getElementById(tipo==='cierre'?`mins-c-${idx}`:`mins-r-${idx}`);
+  const inp=document.getElementById(tipo==='cierre'?`mins-c-${idx}`:tipo==='periodica'?`mins-p-${idx}`:`mins-r-${idx}`);
   const mins=parseInt(inp.value);
   if(!mins||mins<1){toast('Ingresa minutos validos',true);return;}
   saveTimeRec(mins,'manual',workEmpIdx,idx,workMes,workMesYear,tipo);inp.value='';
 }
 function buildTareaSels(ej,ejIdx){
-  const ops=[...TAREAS.map((t,i)=>({label:t,tipo:'rutinaria',idx:i})),...(ej&&ej.tareascierre?ej.tareascierre.map((tc,i)=>({label:`[CIERRE] ${tc.nombre}`,tipo:'cierre',idx:i})):[])];
+  const ops=[
+    ...tareasDeEmpresa(workEmpIdx).map(i=>({label:TAREAS[i],tipo:'rutinaria',idx:i})),
+    ...(ej&&ej.tareascierre?ej.tareascierre.map((tc,i)=>({label:`[CIERRE] ${tc.nombre}`,tipo:'cierre',idx:i})):[]),
+    ...periodicasDeEmpresa(workEmpIdx).map(p=>({label:`[PERIODICA] ${p.nombre}`,tipo:'periodica',idx:p._idx}))
+  ];
   ['timer-tarea','manual-tarea'].forEach(id=>{const s=document.getElementById(id);s.innerHTML='';ops.forEach(op=>{const o=document.createElement('option');o.value=JSON.stringify({tipo:op.tipo,idx:op.idx});o.textContent=op.label;s.appendChild(o);});});
 }
 function renderWorkStats(){
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   const minsEj=totalMinsEjercicio(ej);
   const minsM=totalMinsEmpMesYr(workEmpIdx,workMes,workMesYear);
-  const minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+  const minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
   const minsCie=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+  const minsPer=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);
   document.getElementById('work-stats').innerHTML=`
     <div class="scard-title"><i class="ti ti-chart-bar"></i> Tiempos — ${EMPRESAS[workEmpIdx]}</div>
     <div class="stat-row"><span>Este mes (${MESES[workMes]})</span><span class="stat-val">${fmtMin(minsM)}</span></div>
     ${ej?`<div class="stat-row"><span>Total ejercicio</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsEj)}</span></div>`:''}
     <div class="stat-row"><span>Rutinarias ${workMesYear}</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
     <div class="stat-row"><span>Tareas de cierre</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsCie)}</span></div>
+    <div class="stat-row"><span>Tareas periodicas</span><span class="stat-val" style="color:var(--orange)">${fmtMin(minsPer)}</span></div>
   `;
 }
 
@@ -872,9 +1000,10 @@ function renderHistorial(){
   if(!regs.length){div.innerHTML='<div style="font-size:12px;color:#A0AEC0">Sin registros en este mes.</div>';return;}
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   regs.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')).forEach(r=>{
-    const label=r.tipo==='cierre'?(ej?.tareascierre?.[r.tarea]?.nombre||'Cierre'):(TAREAS[r.tarea]||'Tarea');
+    const label=r.tipo==='cierre'?(ej?.tareascierre?.[r.tarea]?.nombre||'Cierre'):r.tipo==='periodica'?(data.periodicas[r.tarea]?.nombre||'Periodica'):(TAREAS[r.tarea]||'Tarea');
+    const tipoLbl=r.tipo==='cierre'?'cierre':r.tipo==='periodica'?'periodica':'rutinaria';
     const row=document.createElement('div');row.className='hist-row';
-    row.innerHTML=`<span class="hist-mins">${fmtMin(r.mins)}</span><span class="hist-label">${label} <span style="font-size:10px;background:var(--grayl);padding:1px 5px;border-radius:99px">${r.tipo==='cierre'?'cierre':'rutinaria'}</span></span><span class="hist-fecha">${r.fecha||''}</span><button class="btn-ghost btn-sm" style="padding:2px 6px;font-size:11px" onclick="openEditTiempo('${r.yr}',${r.idx},'${label}',${r.mins})"><i class="ti ti-pencil"></i></button>`;
+    row.innerHTML=`<span class="hist-mins">${fmtMin(r.mins)}</span><span class="hist-label">${label} <span style="font-size:10px;background:var(--grayl);padding:1px 5px;border-radius:99px">${tipoLbl}</span></span><span class="hist-fecha">${r.fecha||''}</span><button class="btn-ghost btn-sm" style="padding:2px 6px;font-size:11px" onclick="openEditTiempo('${r.yr}',${r.idx},'${label}',${r.mins})"><i class="ti ti-pencil"></i></button>`;
     div.appendChild(row);
   });
 }
@@ -888,14 +1017,14 @@ function saveEditTiempo(){
   getYD(editTiempoRef.yr).tiempos[editTiempoRef.idx].mins=mins;
   markUnsaved();saveNow();closeEditTiempo();renderTareaRows();
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
-  renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();toast('Tiempo actualizado');
+  renderCierreRows(ej,workEjIdx);renderPeriodicaRows();renderWorkStats();renderHistorial();toast('Tiempo actualizado');
 }
 function deleteEditTiempo(){
   if(!confirm('Eliminar este registro?'))return;
   getYD(editTiempoRef.yr).tiempos.splice(editTiempoRef.idx,1);
   markUnsaved();saveNow();closeEditTiempo();renderTareaRows();
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
-  renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();toast('Registro eliminado');
+  renderCierreRows(ej,workEjIdx);renderPeriodicaRows();renderWorkStats();renderHistorial();toast('Registro eliminado');
 }
 
 // ═══ CRONOMETRO ═══
@@ -911,7 +1040,7 @@ function saveTimeRec(mins,origen,empIdx,tareaIdx,mes,anio,tipo){
   const yr=anio||activeYear;const yd=getYD(yr);if(!yd.tiempos)yd.tiempos=[];
   yd.tiempos.push({mes,emp:empIdx,tarea:tareaIdx,mins,tipo:tipo||'rutinaria',origen,fecha:new Date().toISOString().slice(0,10)});
   markUnsaved();toast(`${fmtMin(mins)} guardados`);
-  if(activePanel==='trabajo'){const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;renderTareaRows();renderCierreRows(ej,workEjIdx);renderWorkStats();renderHistorial();}
+  if(activePanel==='trabajo'){const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;renderTareaRows();renderCierreRows(ej,workEjIdx);renderPeriodicaRows();renderWorkStats();renderHistorial();}
 }
 
 // ═══ MODAL TAREAS CIERRE ═══
@@ -941,6 +1070,46 @@ function deleteCierre(){
   data.ejercicios[editingCierreEmpIdx].tareascierre.splice(editingCierreIdx,1);
   if(data.ejercicios[editingCierreEmpIdx].estadoscierre)data.ejercicios[editingCierreEmpIdx].estadoscierre.splice(editingCierreIdx,1);
   markUnsaved();saveNow();closeCierreModal();renderTrabajoContent();toast('Eliminada');
+}
+
+// ═══ MODAL TAREAS PERIODICAS ═══
+let editingPeriodicaIdx=null;
+function openPeriodicaModal(idx=null){
+  editingPeriodicaIdx=idx;
+  const p=idx!==null?data.periodicas[idx]:null;
+  document.getElementById('modal-periodica-title').textContent=idx!==null?'Editar tarea periodica':'Nueva tarea periodica';
+  document.getElementById('modal-periodica-emp').textContent=EMPRESAS[workEmpIdx];
+  document.getElementById('periodica-del-btn').style.display=idx!==null?'inline-flex':'none';
+  document.getElementById('periodica-nombre').value=p?p.nombre:'';
+  document.getElementById('periodica-periodicidad').value=p?p.periodicidad:'anual';
+  document.getElementById('periodica-vencimiento').value=p?p.vencimiento:'';
+  document.getElementById('periodica-obs').value=p?(p.obs||''):'';
+  document.getElementById('modal-periodica').classList.add('open');
+}
+function closePeriodicaModal(){document.getElementById('modal-periodica').classList.remove('open');editingPeriodicaIdx=null;}
+function savePeriodica(){
+  const nombre=document.getElementById('periodica-nombre').value.trim();
+  const periodicidad=document.getElementById('periodica-periodicidad').value;
+  const vencimiento=document.getElementById('periodica-vencimiento').value;
+  const obs=document.getElementById('periodica-obs').value.trim();
+  if(!nombre){toast('Ingresa un nombre',true);return;}
+  if(editingPeriodicaIdx!==null){
+    const p=data.periodicas[editingPeriodicaIdx];
+    p.nombre=nombre;p.periodicidad=periodicidad;p.vencimiento=vencimiento;p.obs=obs;
+  } else {
+    data.periodicas.push({emp:workEmpIdx,nombre,periodicidad,vencimiento,obs,estado:''});
+  }
+  markUnsaved();saveNow();closePeriodicaModal();renderTrabajoContent();toast('Tarea periodica guardada');
+}
+function deletePeriodica(){
+  if(!confirm('Eliminar esta tarea periodica?'))return;
+  const idx=editingPeriodicaIdx;
+  data.periodicas.splice(idx,1);
+  Object.keys(data.anos).forEach(y=>{
+    const a=data.anos[y];
+    a.tiempos=(a.tiempos||[]).filter(r=>!(r.tipo==='periodica'&&r.tarea===idx)).map(r=>r.tipo==='periodica'&&r.tarea>idx?{...r,tarea:r.tarea-1}:r);
+  });
+  markUnsaved();saveNow();closePeriodicaModal();renderTrabajoContent();toast('Eliminada');
 }
 
 // ═══ EJERCICIOS ═══
@@ -1062,39 +1231,42 @@ function renderTiempos(){
   const filtroEmp=document.getElementById('tiempo-filtro-emp').value;
   const sort=document.getElementById('tiempo-sort').value;
   const yr=activeYear;
-  const totalRut=totalMinsRutinariaYr(yr),totalCie=totalMinsCierreYr(yr),totalTodo=totalMinsAll(yr);
+  const totalRut=totalMinsRutinariaYr(yr),totalCie=totalMinsCierreYr(yr),totalPer=totalMinsPeriodicaYr(yr),totalTodo=totalMinsAll(yr);
   document.getElementById('kpi-tiempos').innerHTML=`
     <div class="kpi"><div class="kpi-label">Tiempo total ${yr}</div><div class="kpi-val" style="color:var(--navy)">${fmtMin(totalTodo)}</div></div>
     <div class="kpi"><div class="kpi-label">Rutinarias</div><div class="kpi-val" style="color:var(--accent)">${fmtMin(totalRut)}</div></div>
     <div class="kpi"><div class="kpi-label">Cierre de balance</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(totalCie)}</div></div>
+    <div class="kpi"><div class="kpi-label">Periodicas</div><div class="kpi-val" style="color:var(--orange)">${fmtMin(totalPer)}</div></div>
     <div class="kpi"><div class="kpi-label">Empresas con tiempo</div><div class="kpi-val">${EMPRESAS.filter((_,i)=>totalMinsEmpYr(i,yr)>0).length}</div></div>
   `;
   let emps=EMPRESAS.map((emp,ei)=>{
     const ej=ejActivoDeEmpresa(ei);
-    let totalM,rut,cie,porTarea,porCierre;
+    let totalM,rut,cie,per,porTarea,porCierre;
     if(sort==='ejercicio'&&ej){
       const mesesEj=getMesesEj(ej)||[];
       const tiempos=mesesEj.flatMap(({mes,anio})=>tiemposYr(anio).filter(r=>r.emp===ei&&r.mes===mes));
       totalM=tiempos.reduce((a,r)=>a+r.mins,0);
-      rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+      rut=tiempos.filter(r=>r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
       cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
-      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
+      per=tiempos.filter(r=>r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);
+      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
       porCierre=ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
     } else {
       const tiempos=tiemposYr(yr).filter(r=>r.emp===ei);
       totalM=tiempos.reduce((a,r)=>a+r.mins,0);
-      rut=tiempos.filter(r=>r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0);
+      rut=tiempos.filter(r=>r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
       cie=tiempos.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
-      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo!=='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
+      per=tiempos.filter(r=>r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);
+      porTarea=TAREAS.map((t,ti)=>({t,m:tiempos.filter(r=>r.tarea===ti&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0);
       porCierre=ej&&ej.tareascierre?ej.tareascierre.map((tc,ci)=>({t:tc.nombre,m:tiempos.filter(r=>r.tarea===ci&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0)})).filter(x=>x.m>0):[];
     }
-    return{emp,ei,totalM,rut,cie,porTarea,porCierre,ej};
+    return{emp,ei,totalM,rut,cie,per,porTarea,porCierre,ej};
   }).filter(x=>x.totalM>0&&(filtroEmp==='todos'||x.ei===parseInt(filtroEmp)));
   if(sort==='total')emps.sort((a,b)=>b.totalM-a.totalM);
   else if(sort==='nombre')emps.sort((a,b)=>a.emp.localeCompare(b.emp));
   const grid=document.getElementById('tiempo-grid');grid.innerHTML='';
   if(!emps.length){grid.innerHTML='<div style="color:var(--gray);font-size:13px">Sin registros de tiempo.</div>';return;}
-  emps.forEach(({emp,ei,totalM,rut,cie,porTarea,porCierre,ej})=>{
+  emps.forEach(({emp,ei,totalM,rut,cie,per,porTarea,porCierre,ej})=>{
     const card=document.createElement('div');card.className='tiempo-card';
     const ejIdx=ej?data.ejercicios.indexOf(ej):-1;
     const sublabel=sort==='ejercicio'&&ej?`Ejercicio: ${ej.numero}`:yr;
@@ -1108,6 +1280,7 @@ function renderTiempos(){
       <div class="tiempo-sub">
         <div class="tiempo-sub-item"><div class="tiempo-sub-label">Rutinarias</div><div class="tiempo-sub-val">${fmtMin(rut)}</div></div>
         <div class="tiempo-sub-item"><div class="tiempo-sub-label">Cierre</div><div class="tiempo-sub-val" style="color:var(--purple)">${fmtMin(cie)}</div></div>
+        ${per?`<div class="tiempo-sub-item"><div class="tiempo-sub-label">Periodicas</div><div class="tiempo-sub-val" style="color:var(--orange)">${fmtMin(per)}</div></div>`:''}
       </div>
       ${tareasHtml||cierreHtml?`<div style="border-top:0.5px solid var(--border);padding-top:.5rem">${tareasHtml}${cierreHtml?`<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;padding:4px 0 2px">Tareas de cierre</div>${cierreHtml}`:''}</div>`:''}
       <div style="margin-top:.5rem;display:flex;gap:6px;flex-wrap:wrap">
@@ -1148,8 +1321,8 @@ function renderAnual(){
   const empMins=EMPRESAS.map((e,i)=>({e,m:totalMinsEmpYr(i,activeYear)})).sort((a,b)=>b.m-a.m).filter(x=>x.m>0);
   empEl.innerHTML=empMins.length?empMins.map(x=>`<div class="stat-row"><span style="font-size:12px">${x.e}</span><span class="stat-val">${fmtMin(x.m)}</span></div>`).join(''):'<div style="font-size:12px;color:#A0AEC0">Sin registros</div>';
   const td=document.getElementById('anual-tareas');td.innerHTML='';
-  const rutTotal=totalMinsRutinariaYr(activeYear),cieTotal=totalMinsCierreYr(activeYear);
-  td.innerHTML+=`<div class="card" style="padding:.75rem;grid-column:span 2"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:.4rem">Totales</div><div style="display:flex;gap:16px"><div><div style="font-size:11px;color:var(--gray)">Rutinarias</div><div style="font-size:17px;font-weight:700;color:var(--accent)">${fmtMin(rutTotal)}</div></div><div><div style="font-size:11px;color:var(--purple)">Cierre de balance</div><div style="font-size:17px;font-weight:700;color:var(--purple)">${fmtMin(cieTotal)}</div></div></div></div>`;
+  const rutTotal=totalMinsRutinariaYr(activeYear),cieTotal=totalMinsCierreYr(activeYear),perTotal=totalMinsPeriodicaYr(activeYear);
+  td.innerHTML+=`<div class="card" style="padding:.75rem;grid-column:span 2"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:.4rem">Totales</div><div style="display:flex;gap:16px;flex-wrap:wrap"><div><div style="font-size:11px;color:var(--gray)">Rutinarias</div><div style="font-size:17px;font-weight:700;color:var(--accent)">${fmtMin(rutTotal)}</div></div><div><div style="font-size:11px;color:var(--purple)">Cierre de balance</div><div style="font-size:17px;font-weight:700;color:var(--purple)">${fmtMin(cieTotal)}</div></div><div><div style="font-size:11px;color:var(--orange)">Periodicas</div><div style="font-size:17px;font-weight:700;color:var(--orange)">${fmtMin(perTotal)}</div></div></div></div>`;
   TAREAS.forEach((tarea,ti)=>{
     const mins=totalMinsTareaYr(ti,activeYear);const hec=MESES.reduce((a,_,m)=>a+EMPRESAS.reduce((b,_,e)=>b+(getE(m,e,ti)==='Hecho'?1:0),0),0);
     td.innerHTML+=`<div class="card" style="padding:.75rem"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">${tarea}</div><div style="font-size:15px;font-weight:700">${fmtMin(mins)}</div><div style="font-size:11px;color:var(--gray);margin-top:3px">${hec} realizadas${mins&&hec?` · ${Math.round(mins/hec)}m prom`:''}</div></div>`;
@@ -1160,7 +1333,7 @@ function renderAnual(){
 function renderConfig(){
   document.getElementById('emp-count').textContent=`(${EMPRESAS.length})`;
   const el=document.getElementById('emp-list');el.innerHTML='';
-  EMPRESAS.forEach((emp,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${emp.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('empresa',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-danger btn-sm" onclick="eliminarEmpresa(${i})"><i class="ti ti-trash"></i></button>`;el.appendChild(row);});
+  EMPRESAS.forEach((emp,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${emp.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('empresa',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-ghost btn-sm" style="font-size:11px" onclick="openTareasEmpModal(${i})" title="Elegir que tareas rutinarias aplican"><i class="ti ti-list-check"></i> Tareas</button><button class="btn-danger btn-sm" onclick="eliminarEmpresa(${i})"><i class="ti ti-trash"></i></button>`;el.appendChild(row);});
   const tl=document.getElementById('tarea-list');tl.innerHTML='';
   TAREAS.forEach((t,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${t.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('tarea',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-danger btn-sm" onclick="eliminarTarea(${i})"><i class="ti ti-trash"></i></button>`;tl.appendChild(row);});
   const yg=document.getElementById('year-grid');yg.innerHTML='';
@@ -1172,17 +1345,44 @@ function renombrar(tipo,input,idx){
   if(tipo==='empresa'){if(EMPRESAS[idx]===val)return;EMPRESAS[idx]=val;}else{if(TAREAS[idx]===val)return;TAREAS[idx]=val;}
   markUnsaved();buildWorkEmpSel();toast('Actualizado');
 }
+let editingTareasEmpIdx=null;
+function openTareasEmpModal(empIdx){
+  editingTareasEmpIdx=empIdx;
+  document.getElementById('tareasemp-emp').textContent=EMPRESAS[empIdx];
+  const activas=tareasDeEmpresa(empIdx);
+  const cont=document.getElementById('tareasemp-list');cont.innerHTML='';
+  TAREAS.forEach((t,i)=>{
+    const row=document.createElement('label');row.className='cfg-row';row.style.cursor='pointer';
+    row.innerHTML=`<input type="checkbox" ${activas.includes(i)?'checked':''} data-idx="${i}" style="margin-right:4px"> <span style="flex:1">${t}</span>`;
+    cont.appendChild(row);
+  });
+  document.getElementById('modal-tareasemp').classList.add('open');
+}
+function closeTareasEmpModal(){document.getElementById('modal-tareasemp').classList.remove('open');editingTareasEmpIdx=null;}
+function saveTareasEmpModal(){
+  const checks=document.querySelectorAll('#tareasemp-list input[type=checkbox]');
+  const activas=[...checks].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+  if(!data.tareasEmpresa)data.tareasEmpresa={};
+  data.tareasEmpresa[editingTareasEmpIdx]=activas;
+  markUnsaved();saveNow();closeTareasEmpModal();renderAll();toast('Tareas de la empresa actualizadas');
+}
+function marcarTodasTareasEmpModal(valor){
+  document.querySelectorAll('#tareasemp-list input[type=checkbox]').forEach(c=>c.checked=valor);
+}
 function addEmpresa(){const inp=document.getElementById('new-emp'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}EMPRESAS.push(val);markUnsaved();inp.value='';renderConfig();buildWorkEmpSel();toast(`"${val}" agregada`);}
 function eliminarEmpresa(i){
   if(!confirm(`Eliminar "${EMPRESAS[i]}"?`))return;const n=EMPRESAS[i];EMPRESAS.splice(i,1);
   Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(e===i)return;nt[`${m}_${e>i?e-1:e}_${t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>r.emp!==i).map(r=>({...r,emp:r.emp>i?r.emp-1:r.emp}));});
   data.ejercicios=data.ejercicios.filter(e=>e.emp!==i).map(e=>({...e,emp:e.emp>i?e.emp-1:e.emp}));
+  data.periodicas=data.periodicas.filter(p=>p.emp!==i).map(p=>({...p,emp:p.emp>i?p.emp-1:p.emp}));
+  const nte={};Object.entries(data.tareasEmpresa||{}).forEach(([k,v])=>{const e=Number(k);if(e===i)return;nte[e>i?e-1:e]=v;});data.tareasEmpresa=nte;
   markUnsaved();saveNow();renderConfig();buildWorkEmpSel();toast(`"${n}" eliminada`);
 }
 function addTarea(){const inp=document.getElementById('new-tarea'),val=inp.value.trim();if(!val){toast('Escribe un nombre',true);return;}TAREAS.push(val);markUnsaved();inp.value='';renderConfig();toast(`"${val}" agregada`);}
 function eliminarTarea(i){
   if(!confirm(`Eliminar "${TAREAS[i]}"?`))return;const n=TAREAS[i];TAREAS.splice(i,1);
-  Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(t===i)return;nt[`${m}_${e}_${t>i?t-1:t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>r.tarea!==i||r.tipo==='cierre').map(r=>r.tipo!=='cierre'&&r.tarea>i?{...r,tarea:r.tarea-1}:r);});
+  Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(t===i)return;nt[`${m}_${e}_${t>i?t-1:t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>!(r.tipo==='rutinaria'&&r.tarea===i)).map(r=>r.tipo==='rutinaria'&&r.tarea>i?{...r,tarea:r.tarea-1}:r);});
+  Object.entries(data.tareasEmpresa||{}).forEach(([e,lista])=>{data.tareasEmpresa[e]=lista.filter(t=>t!==i).map(t=>t>i?t-1:t);});
   markUnsaved();saveNow();renderConfig();toast(`"${n}" eliminada`);
 }
 
@@ -1245,7 +1445,7 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
 function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();}

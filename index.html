@@ -71,7 +71,7 @@ button:hover{background:var(--grayl)}
 .b100{background:var(--greenl);color:var(--green)}.b75{background:#BEE3F8;color:#2B6CB0}.b50{background:var(--orangel);color:var(--orange)}.b0{background:var(--grayl);color:var(--gray)}
 .tarea-dots{display:flex;gap:4px;flex-wrap:wrap;margin:.4rem 0}
 .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.d-hecho{background:var(--green2)}.d-pendiente{background:#FC8181}.d-nc{background:#CBD5E0}.d-empty{background:#E2E8F0}
+.d-hecho{background:var(--green2)}.d-pendiente{background:#FC8181}.d-espera{background:#9F7AEA}.d-nc{background:#CBD5E0}.d-empty{background:#E2E8F0}
 .emp-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-top:.5rem;padding-top:.5rem;border-top:0.5px solid var(--border)}
 .emp-footer strong{color:#2D3748}
 .work-header{display:flex;gap:12px;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end}
@@ -85,6 +85,7 @@ button:hover{background:var(--grayl)}
 .tarea-row.tr-nc{background:var(--grayl);opacity:.8}
 .tarea-row.tr-cierre{border-left:3px solid var(--purple)}
 .tarea-row.tr-periodica{border-left:3px solid var(--orange)}
+.tarea-row.tr-espera{border-color:#9F7AEA;background:#FAF5FF}
 .tarea-name{font-size:13px;font-weight:600;color:#2D3748;min-width:105px;flex-shrink:0}
 .tarea-type{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px}
 .tt-cierre{background:var(--purplel);color:var(--purple)}
@@ -99,6 +100,8 @@ button:hover{background:var(--grayl)}
 .ebtn-pendiente.active{border-color:#FC8181;box-shadow:0 0 0 2px rgba(252,129,129,.25)}
 .ebtn-nc{background:var(--grayl);color:var(--gray)}
 .ebtn-nc.active{border-color:#A0AEC0;box-shadow:0 0 0 2px rgba(160,174,192,.25)}
+.ebtn-espera{background:#E9D8FD;color:#553C9A}
+.ebtn-espera.active{border-color:#9F7AEA;box-shadow:0 0 0 2px rgba(159,122,234,.25)}
 .tarea-time-area{display:flex;align-items:center;gap:5px;margin-left:auto;flex-wrap:wrap}
 .mins-inp{width:58px;font-size:12px;padding:4px 5px;border-radius:var(--radius);border:0.5px solid var(--border);text-align:center;font-family:inherit}
 .mins-inp:focus{border-color:var(--accent);outline:none}
@@ -191,6 +194,18 @@ button:hover{background:var(--grayl)}
 .hist-mins{font-weight:700;color:var(--navy);min-width:35px}
 .hist-label{flex:1;color:var(--gray)}
 .hist-fecha{font-size:10px;color:#A0AEC0;white-space:nowrap}
+.pend-item{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.6rem .85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.pend-item:hover{border-color:var(--accent)}
+.pend-item.pi-atrasado{border-left:3px solid var(--red)}
+.pend-item.pi-espera{border-left:3px solid #9F7AEA}
+.pend-emp{font-size:12px;font-weight:700;color:var(--navy)}
+.pend-detalle{font-size:11px;color:var(--gray);flex:1}
+.pend-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pb-rutinaria{background:var(--grayl);color:var(--gray)}
+.pb-cierre{background:var(--purplel);color:var(--purple)}
+.pb-periodica{background:var(--orangel);color:var(--orange)}
+.pb-ejercicio{background:var(--redl);color:var(--red)}
+.pb-espera{background:#E9D8FD;color:#553C9A}
 </style>
 </head>
 <body>
@@ -223,6 +238,7 @@ button:hover{background:var(--grayl)}
     <button class="tab" onclick="showPanel('ejercicios',this)"><i class="ti ti-book"></i> Ejercicios</button>
     <button class="tab" onclick="showPanel('tiempos',this)"><i class="ti ti-clock"></i> Tiempos</button>
     <button class="tab" onclick="showPanel('anual',this)"><i class="ti ti-trending-up"></i> Resumen anual</button>
+    <button class="tab" onclick="showPanel('pendientes',this)"><i class="ti ti-alert-circle"></i> Pendientes</button>
     <button class="tab" onclick="showPanel('config',this)"><i class="ti ti-settings"></i> Config</button>
   </div>
 
@@ -354,6 +370,21 @@ button:hover{background:var(--grayl)}
         <div class="card" id="anual-emp"></div>
         <div class="sec" style="margin-top:1rem">Tiempo por tipo de tarea</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="anual-tareas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENDIENTES -->
+  <div id="panel-pendientes" class="panel">
+    <div class="kpi-strip" id="kpi-pendientes"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start">
+      <div>
+        <div class="sec" style="margin-top:0;color:var(--red)">⚠ Atrasado</div>
+        <div id="pend-atrasado"></div>
+      </div>
+      <div>
+        <div class="sec" style="margin-top:0;color:var(--accent)" id="pend-mes-titulo">Este mes</div>
+        <div id="pend-mes"></div>
       </div>
     </div>
   </div>
@@ -722,7 +753,7 @@ function renovarPeriodica(idx){
 }
 function toast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.background=err?'#742A2A':'#1A202C';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function badgeCls(p){return p>=1?'b100':p>=.75?'b75':p>.05?'b50':'b0';}
-function estadoClass(est){return est==='Hecho'?'tr-hecho':est==='Pendiente'?'tr-pendiente':est==='No Corresponde'?'tr-nc':'';}
+function estadoClass(est){return est==='Hecho'?'tr-hecho':est==='Pendiente'?'tr-pendiente':est==='Esperando Cliente'?'tr-espera':est==='No Corresponde'?'tr-nc':'';}
 
 // ═══ DASHBOARD ═══
 function buildDashMesSel(){const s=document.getElementById('dash-mes-sel');s.innerHTML='';MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});s.value=MES_ACTUAL;}
@@ -750,7 +781,7 @@ function renderDashboard(){
     const minsM=totalMinsEmpMesYr(ei,mes,activeYear),minsA=totalMinsEmpYr(ei,activeYear);
     const ej=ejActivoDeEmpresa(ei);
     const diasC=ej?diasRestantes(ej.cierre):null;
-    const dots=tareasDeEmpresa(ei).map(t=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
+    const dots=tareasDeEmpresa(ei).map(t=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='Esperando Cliente'?'d-espera':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
     let ejHtml='';
     if(ej){
       const numEjs=ejsDeEmpresa(ei).length;
@@ -863,6 +894,7 @@ function renderTareaRows(){
       <div class="estado-btns">
         <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoWork(${ti},'Hecho')">✅ Hecho</button>
         <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoWork(${ti},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-espera${est==='Esperando Cliente'?' active':''}" onclick="setEstadoWork(${ti},'Esperando Cliente')">🕓 Espera cliente</button>
         <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoWork(${ti},'No Corresponde')">— N/C</button>
       </div>
       <div class="tarea-time-area">
@@ -889,6 +921,7 @@ function renderCierreRows(ej,ejIdx){
       <div class="estado-btns">
         <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'Hecho')">✅ Hecho</button>
         <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-espera${est==='Esperando Cliente'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'Esperando Cliente')">🕓 Espera cliente</button>
         <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoCierre(${ejIdx},${ci},'No Corresponde')">— N/C</button>
       </div>
       <div class="tarea-time-area">
@@ -925,6 +958,7 @@ function renderPeriodicaRows(){
       <div class="estado-btns">
         <button class="ebtn ebtn-hecho${est==='Hecho'?' active':''}" onclick="setEstadoPeriodica(${idx},'Hecho')">✅ Hecho</button>
         <button class="ebtn ebtn-pendiente${est==='Pendiente'?' active':''}" onclick="setEstadoPeriodica(${idx},'Pendiente')">⏳ Pendiente</button>
+        <button class="ebtn ebtn-espera${est==='Esperando Cliente'?' active':''}" onclick="setEstadoPeriodica(${idx},'Esperando Cliente')">🕓 Espera cliente</button>
         <button class="ebtn ebtn-nc${est==='No Corresponde'?' active':''}" onclick="setEstadoPeriodica(${idx},'No Corresponde')">— N/C</button>
       </div>
       <div class="tarea-time-area">
@@ -1292,6 +1326,72 @@ function renderTiempos(){
 }
 
 // ═══ RESUMEN ANUAL ═══
+// ═══ PENDIENTES (atrasado / este mes, cruzando todas las empresas) ═══
+function renderPendientes(){
+  const atrasado=[],esteMes=[];
+  const mesAct=MES_ACTUAL,anioAct=ANO_ACTUAL;
+  EMPRESAS.forEach((emp,ei)=>{
+    tareasDeEmpresa(ei).forEach(ti=>{
+      for(let m=0;m<mesAct;m++){
+        const est=getE(m,ei,ti,anioAct);
+        if(est==='Pendiente'||est==='Esperando Cliente')atrasado.push({emp,ei,texto:`${TAREAS[ti]} — ${MESES[m]}`,tipo:'rutinaria',estado:est,mes:m,anio:anioAct});
+      }
+      const estM=getE(mesAct,ei,ti,anioAct);
+      if(estM==='Pendiente'||estM==='Esperando Cliente')esteMes.push({emp,ei,texto:`${TAREAS[ti]} — ${MESES[mesAct]}`,tipo:'rutinaria',estado:estM,mes:mesAct,anio:anioAct});
+    });
+  });
+  data.ejercicios.forEach((ej,idx)=>{
+    if(ej.cerrado)return;
+    const d=diasRestantes(ej.cierre);
+    if(d!==null){
+      const item={emp:EMPRESAS[ej.emp],ei:ej.emp,texto:`Cierre ${ej.numero}`,tipo:'ejercicio',dias:d,ejIdx:idx};
+      if(d<0)atrasado.push(item);else if(d<=31)esteMes.push(item);
+    }
+    (ej.tareascierre||[]).forEach((tc,ci)=>{
+      const est=getCierreE(idx,ci);
+      if(est==='Pendiente'||est==='Esperando Cliente'){
+        const item={emp:EMPRESAS[ej.emp],ei:ej.emp,texto:`${tc.nombre} (${ej.numero})`,tipo:'cierre',estado:est,dias:d,mes:mesAct,anio:anioAct};
+        if(d!==null&&d<0)atrasado.push(item);else esteMes.push(item);
+      }
+    });
+  });
+  data.periodicas.forEach(p=>{
+    if(p.estado==='Hecho'||p.estado==='No Corresponde')return;
+    const d=diasRestantes(p.vencimiento);
+    if(d===null)return;
+    const item={emp:EMPRESAS[p.emp],ei:p.emp,texto:p.nombre,tipo:'periodica',estado:p.estado,dias:d};
+    if(d<0)atrasado.push(item);else if(d<=31)esteMes.push(item);
+  });
+  const enEspera=[...atrasado,...esteMes].filter(x=>x.estado==='Esperando Cliente').length;
+  document.getElementById('kpi-pendientes').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Atrasado</div><div class="kpi-val" style="color:var(--red)">${atrasado.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Este mes (${MESES[mesAct]})</div><div class="kpi-val" style="color:var(--accent)">${esteMes.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Esperando al cliente</div><div class="kpi-val" style="color:#9F7AEA">${enEspera}</div></div>
+  `;
+  document.getElementById('pend-mes-titulo').textContent=`Este mes (${MESES[mesAct]} ${anioAct})`;
+  const renderList=(list,elId,esAtrasado)=>{
+    const el=document.getElementById(elId);el.innerHTML='';
+    if(!list.length){el.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.5rem 0">Nada por aca 🎉</div>';return;}
+    list.sort((a,b)=>(a.dias??0)-(b.dias??0));
+    list.forEach(it=>{
+      const badgeTipo=it.tipo==='ejercicio'?'pb-ejercicio':it.tipo==='cierre'?'pb-cierre':it.tipo==='periodica'?'pb-periodica':'pb-rutinaria';
+      const tipoLbl=it.tipo==='ejercicio'?'EJERCICIO':it.tipo==='periodica'?'PERIODICA':it.tipo==='cierre'?'CIERRE':'RUTINARIA';
+      const diasTxt=it.dias!==undefined&&it.dias!==null?(it.dias<0?`Vencido ${Math.abs(it.dias)}d`:it.dias===0?'Hoy':`En ${it.dias}d`):'';
+      const esperaTxt=it.estado==='Esperando Cliente'?`<span class="pend-badge pb-espera">Espera cliente</span>`:'';
+      const div=document.createElement('div');
+      div.className='pend-item'+(esAtrasado?' pi-atrasado':'')+(it.estado==='Esperando Cliente'?' pi-espera':'');
+      div.innerHTML=`<div style="flex:1"><div class="pend-emp">${it.emp}</div><div class="pend-detalle">${it.texto}${diasTxt?' · '+diasTxt:''}</div></div><span class="pend-badge ${badgeTipo}">${tipoLbl}</span>${esperaTxt}`;
+      div.onclick=()=>{
+        if(it.tipo==='ejercicio'){showPanel('ejercicios',document.querySelectorAll('.tab')[2]);}
+        else{openTrabajo(it.ei,it.mes!==undefined?it.mes:MES_ACTUAL,it.anio||ANO_ACTUAL);}
+      };
+      el.appendChild(div);
+    });
+  };
+  renderList(atrasado,'pend-atrasado',true);
+  renderList(esteMes,'pend-mes',false);
+}
+
 function renderAnual(){
   document.getElementById('anual-yr').textContent=activeYear;
   let totalH=0,totalP=0;for(let m=0;m<12;m++){totalH+=countMes(m,'Hecho');totalP+=countMes(m,'Pendiente');}
@@ -1435,6 +1535,7 @@ function renderAll(){
   else if(activePanel==='ejercicios')renderEjercicios();
   else if(activePanel==='tiempos')renderTiempos();
   else if(activePanel==='anual')renderAnual();
+  else if(activePanel==='pendientes')renderPendientes();
   else if(activePanel==='config')renderConfig();
 }
 function showPanel(name,btn){

@@ -600,6 +600,7 @@ let TAREAS=["Compras","Ventas","IVA","IIBB","Seg. e Hig.","Sueldos","Concil. Bco
 let activePanel='dashboard';
 let activeYear=ANO_ACTUAL;
 let workEmpIdx=0, workEjIdx=null, workMes=MES_ACTUAL, workMesYear=ANO_ACTUAL;
+let verCierreForzado=false;
 let editingEjIdx=null, editingCierreEmpIdx=null, editingCierreIdx=null;
 let hasUnsavedChanges=false;
 let autoBackupTimer=null;
@@ -876,13 +877,14 @@ function buildEjSelector(){
     const btn=document.createElement('button');
     btn.className='ej-sel-btn'+(ej.cerrado?' cerrado':'')+(workEjIdx===ej._idx?' active':'');
     btn.innerHTML=`${ej.cerrado?'🔒':'📂'} ${ej.numero}${ej.cerrado?' <span style="font-size:9px">(cerrado)</span>':''}`;
-    btn.onclick=()=>{workEjIdx=ej._idx;buildEjSelector();renderTrabajoContent();};
+    btn.onclick=()=>{workEjIdx=ej._idx;verCierreForzado=false;buildEjSelector();renderTrabajoContent();};
     div.appendChild(btn);
   });
 }
 
 function openTrabajo(empIdx,mes,anio){
   workEmpIdx=empIdx;workMes=mes;workMesYear=anio||activeYear;
+  verCierreForzado=false;
   const ejActivo=ejActivoDeEmpresa(empIdx);
   workEjIdx=ejActivo?ejActivo._idx:null;
   showPanel('trabajo',document.querySelectorAll('.tab')[1]);
@@ -892,6 +894,7 @@ function openTrabajo(empIdx,mes,anio){
 
 function onChangeWorkEmp(){
   workEmpIdx=parseInt(document.getElementById('work-emp').value);
+  verCierreForzado=false;
   const ejActivo=ejActivoDeEmpresa(workEmpIdx);
   workEjIdx=ejActivo?ejActivo._idx:null;
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
@@ -978,6 +981,13 @@ function renderCierreRows(ej,ejIdx){
     div.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:.4rem 0">No hay tareas de cierre. Agrega las que correspondan a esta empresa.</div>';return;
   }
   const mesesEj=getMesesEj(ej)||[];
+  const ultimoMes=mesesEj.length?mesesEj[mesesEj.length-1]:null;
+  const esUltimoMes=ultimoMes&&ultimoMes.mes===workMes&&ultimoMes.anio===workMesYear;
+  if(!esUltimoMes&&!verCierreForzado){
+    const lbl=ultimoMes?`${MESES[ultimoMes.mes]} ${ultimoMes.anio}`:'el ultimo mes del ejercicio';
+    div.innerHTML=`<div style="font-size:12px;color:var(--gray);padding:.5rem 0">Estas tareas se habilitan en <b>${lbl}</b> (cierre del ejercicio). <span style="color:var(--accent);cursor:pointer" onclick="mostrarCierreForzado()">Mostrar de todas formas →</span></div>`;
+    return;
+  }
   ej.tareascierre.forEach((tc,ci)=>{
     const est=getCierreE(ejIdx,ci);
     const minsCiTotal=mesesEj.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0),0);
@@ -993,12 +1003,14 @@ function renderCierreRows(ej,ejIdx){
       <div class="tarea-time-area">
         <input type="number" class="mins-inp" id="mins-c-${ci}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('cierre',${ci});this.value='';}">
         <button class="btn-success btn-sm" onclick="addMinsRow('cierre',${ci})"><i class="ti ti-plus"></i></button>
-        <button class="btn-ghost btn-sm" onclick="openCierreModal(${ejIdx},${ci})"><i class="ti ti-pencil"></i></button>
+        <button class="btn-ghost btn-sm" onclick="openCierreModal(${ejIdx},${ci})" title="Editar o eliminar esta tarea de cierre"><i class="ti ti-pencil"></i> Editar</button>
         <span class="tarea-acum">Ejercicio:<b>${fmtMin(minsCiTotal)}</b></span>
       </div>`;
     div.appendChild(row);
   });
 }
+
+function mostrarCierreForzado(){verCierreForzado=true;renderTrabajoContent();}
 
 function renderPeriodicaRows(){
   const div=document.getElementById('periodica-rows');if(!div)return;div.innerHTML='';
@@ -1030,7 +1042,7 @@ function renderPeriodicaRows(){
       <div class="tarea-time-area">
         <input type="number" class="mins-inp" id="mins-p-${idx}" placeholder="min" min="1" max="999" onkeydown="if(event.key==='Enter'){addMinsRow('periodica',${idx});this.value='';}">
         <button class="btn-success btn-sm" onclick="addMinsRow('periodica',${idx})"><i class="ti ti-plus"></i></button>
-        <button class="btn-ghost btn-sm" onclick="openPeriodicaModal(${idx})"><i class="ti ti-pencil"></i></button>
+        <button class="btn-ghost btn-sm" onclick="openPeriodicaModal(${idx})" title="Editar o eliminar esta tarea periodica"><i class="ti ti-pencil"></i> Editar</button>
         ${est==='Hecho'?`<button class="btn-ghost btn-sm" onclick="renovarPeriodica(${idx})" title="Renovar para el proximo vencimiento"><i class="ti ti-repeat"></i></button>`:''}
         <span class="tarea-acum">Acumulado:<b>${fmtMin(mins)}</b></span>
       </div>`;

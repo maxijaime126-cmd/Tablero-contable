@@ -1302,8 +1302,9 @@ function renderEjercicios(){
     const diasHtml=!ej.cerrado&&d!==null?`<div style="font-size:11px;font-weight:700;color:${venc||urg?'var(--red)':d<=90?'var(--orange)':'var(--green)'};margin-top:.3rem">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
     grid.innerHTML+=`<div class="ej-card ${cls}">
       <div style="position:absolute;top:7px;right:7px;display:flex;gap:4px">
+        <button class="btn-ghost btn-sm" style="padding:3px 7px;color:var(--accent)" onclick="openEjModal();setTimeout(()=>document.getElementById('ej-emp-sel').value=${ej.emp},50)" title="Nuevo ejercicio para esta empresa"><i class="ti ti-plus"></i></button>
         <button class="btn-ghost btn-sm" style="padding:3px 7px;color:var(--red)" onclick="generarPDF(${idx})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
-        <button class="btn-ghost btn-sm" style="padding:3px 7px" onclick="openEjModal(${idx})"><i class="ti ti-pencil"></i></button>
+        <button class="btn-ghost btn-sm" style="padding:3px 7px" onclick="openEjModal(${idx})" title="Editar este ejercicio"><i class="ti ti-pencil"></i></button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:.25rem">
         <div class="ej-emp">${EMPRESAS[ej.emp]||'?'}</div>

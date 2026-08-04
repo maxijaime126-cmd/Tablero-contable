@@ -866,8 +866,9 @@ function renderDashboard(){
   const grid=document.getElementById('emp-grid');grid.innerHTML='';
   EMPRESAS.forEach((emp,ei)=>{
     const pctE=pctEmpMesYr(mes,ei,activeYear),w=Math.round(pctE*100);
-    const minsM=totalMinsEmpMesYr(ei,mes,activeYear),minsA=totalMinsEmpYr(ei,activeYear);
+    const minsM=totalMinsEmpMesYr(ei,mes,activeYear);
     const ej=ejActivoDeEmpresa(ei);
+    const minsEj=totalMinsEjercicio(ej);
     const diasC=ej?diasRestantes(ej.cierre):null;
     const dots=tareasDeEmpresa(ei).map(t=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='Esperando Cliente'?'d-espera':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
     let ejHtml='';
@@ -881,7 +882,7 @@ function renderDashboard(){
       <div class="emp-card-top"><div><div class="emp-name">${emp}</div>${ejHtml}</div><span class="emp-badge ${badgeCls(pctE)}">${w}%</span></div>
       <div class="tarea-dots">${dots}</div>
       <div class="prog-wrap"><div class="prog-bar" style="width:${w}%"></div></div>
-      <div class="emp-footer"><span>Mes: <strong>${fmtMin(minsM)}</strong></span><span>Ano total: <strong>${fmtMin(minsA)}</strong></span></div>`;
+      <div class="emp-footer"><span>Mes: <strong>${fmtMin(minsM)}</strong></span><span>${ej?'Ejercicio':'Ano'}: <strong>${ej?fmtMin(minsEj):fmtMin(totalMinsEmpYr(ei,activeYear))}</strong></span></div>`;
     card.addEventListener('click',()=>openTrabajo(ei,mes,activeYear));
     grid.appendChild(card);
   });

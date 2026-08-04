@@ -791,6 +791,27 @@ function totalMinsEjercicio(ej){
   const meses=getMesesEj(ej)||[];
   return meses.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes).reduce((a,r)=>a+r.mins,0),0);
 }
+// Cuanto llevas hecho de lo que YA deberia estar hecho segun el calendario (meses ya transcurridos)
+function avanceHastaHoy(ej){
+  const meses=getMesesEj(ej)||[];
+  if(!meses.length)return null;
+  const idxTareas=tareasDeEmpresa(ej.emp);
+  if(!idxTareas.length)return null;
+  let transcurridos=0,hechas=0,esperadas=0;
+  meses.forEach(({mes,anio})=>{
+    const esPasado=anio<HOY.getFullYear()||(anio===HOY.getFullYear()&&mes<=HOY.getMonth());
+    if(!esPasado)return;
+    transcurridos++;
+    idxTareas.forEach(ti=>{
+      const est=getE(mes,ej.emp,ti,anio);
+      if(est==='No Corresponde')return;
+      esperadas++;
+      if(est==='Hecho')hechas++;
+    });
+  });
+  if(!transcurridos)return{transcurridos:0,totalMeses:meses.length,pct:null};
+  return{transcurridos,totalMeses:meses.length,hechas,esperadas,pct:esperadas>0?Math.round(hechas/esperadas*100):100};
+}
 function fmtMin(m){if(!m||m===0)return'--';if(m<60)return m+'m';const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
 function parseDate(iso){if(!iso)return null;const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
 function fmtDate(iso){if(!iso)return'';return parseDate(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -1299,6 +1320,7 @@ function renderEjercicios(){
     mesesEj.forEach(({mes,anio})=>{for(let t=0;t<TAREAS.length;t++){if(getE(mes,ej.emp,t,anio)==='Pendiente')pend.push(`${MESES[mes].slice(0,3)}·${TAREAS[t]}`);}});
     const cierrePend=(ej.tareascierre||[]).filter((_,ci)=>getCierreE(idx,ci)==='Pendiente');
     const minsTotal=totalMinsEjercicio(ej);
+    const alDia=avanceHastaHoy(ej);
     const diasHtml=!ej.cerrado&&d!==null?`<div style="font-size:11px;font-weight:700;color:${venc||urg?'var(--red)':d<=90?'var(--orange)':'var(--green)'};margin-top:.3rem">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
     grid.innerHTML+=`<div class="ej-card ${cls}">
       <div style="position:absolute;top:7px;right:7px;display:flex;gap:4px">
@@ -1314,6 +1336,7 @@ function renderEjercicios(){
       <div class="ej-dates">Inicio: <strong>${fmtDate(ej.inicio)}</strong> &nbsp; Cierre: <strong>${fmtDate(ej.cierre)}</strong></div>
       ${diasHtml}
       ${tot?`<div style="margin:.5rem 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--gray)">Avance rutinarias</span><span style="font-weight:700">${pct}%</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct===100?'var(--green2)':pct>60?'var(--accent)':'var(--orange)'}"></div></div></div>`:''}
+      ${alDia&&alDia.pct!==null?`<div style="margin:.4rem 0;padding:.4rem .6rem;border-radius:var(--radius);background:${alDia.pct>=90?'#F0FFF4':alDia.pct>=60?'#FFFAF0':'#FFF5F5'}"><div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--gray)">Al dia (mes ${alDia.transcurridos} de ${alDia.totalMeses})</span><span style="font-weight:700;color:${alDia.pct>=90?'var(--green)':alDia.pct>=60?'var(--orange)':'var(--red)'}">${alDia.pct}%</span></div></div>`:''}
       ${pend.length?`<div style="margin-top:.3rem">${pend.map(p=>`<span class="ej-tag">${p}</span>`).join('')}</div>`:''}
       ${cierrePend.length?`<div style="margin-top:.3rem">${cierrePend.map(tc=>`<span class="ej-tag" style="background:var(--purplel);color:var(--purple)">${tc.nombre}</span>`).join('')}</div>`:''}
       ${!pend.length&&!cierrePend.length&&tot?`<div style="font-size:11px;color:var(--green);margin-top:.3rem">✅ Sin pendientes</div>`:''}

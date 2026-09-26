@@ -553,14 +553,29 @@ function renderWorkStats(){
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;
   const minsEj=totalMinsEjercicio(ej);
   const minsM=totalMinsEmpMesYr(workEmpIdx,workMes,workMesYear);
-  const minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
-  const minsCie=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+  const mesesEj=getMesesEj(ej);
+  let minsRut=0,minsCie=0,rutLbl;
+  if(mesesEj){
+    // acotado a los meses del ejercicio actual, para no mezclar con otro ejercicio de la misma empresa
+    mesesEj.forEach(({mes,anio})=>{
+      tiemposYr(anio).filter(r=>r.emp===workEmpIdx&&r.mes===mes).forEach(r=>{
+        if(r.tipo==='rutinaria')minsRut+=r.mins;
+        else if(r.tipo==='cierre')minsCie+=r.mins;
+      });
+    });
+    rutLbl='Rutinarias (este ejercicio)';
+  } else {
+    // sin ejercicio cargado: no hay otro alcance posible, mostramos el ano calendario
+    minsRut=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
+    minsCie=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+    rutLbl=`Rutinarias ${workMesYear}`;
+  }
   const minsPer=tiemposYr(workMesYear).filter(r=>r.emp===workEmpIdx&&r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);
   document.getElementById('work-stats').innerHTML=`
     <div class="scard-title"><i class="ti ti-chart-bar"></i> Tiempos — ${EMPRESAS[workEmpIdx]}</div>
     <div class="stat-row"><span>Este mes (${MESES[workMes]})</span><span class="stat-val">${fmtMin(minsM)}</span></div>
     ${ej?`<div class="stat-row"><span>Total ejercicio</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsEj)}</span></div>`:''}
-    <div class="stat-row"><span>Rutinarias ${workMesYear}</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
+    <div class="stat-row"><span>${rutLbl}</span><span class="stat-val">${fmtMin(minsRut)}</span></div>
     <div class="stat-row"><span>Tareas de cierre</span><span class="stat-val" style="color:var(--purple)">${fmtMin(minsCie)}</span></div>
     <div class="stat-row"><span>Tareas periodicas</span><span class="stat-val" style="color:var(--orange)">${fmtMin(minsPer)}</span></div>
   `;

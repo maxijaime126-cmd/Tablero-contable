@@ -1,0 +1,17 @@
+name: Mantener Supabase activo
+
+on:
+  schedule:
+    - cron: '0 12 */3 * *'   # cada 3 dias a las 12:00 UTC, para no llegar nunca a los 7 dias de inactividad
+  workflow_dispatch: {}       # tambien permite ejecutarlo a mano desde GitHub si queres probarlo
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping a Supabase
+        run: |
+          curl -s -o /dev/null -w "Respuesta de Supabase: %{http_code}\n" \
+            "https://ovmtacwcrxfxtxsggbxt.supabase.co/rest/v1/tablero?select=id&limit=1" \
+            -H "apikey: sb_publishable_llgiKHW2EOOTiP4haWewFg_Vubpj01W" \
+            -H "Authorization: Bearer sb_publishable_llgiKHW2EOOTiP4haWewFg_Vubpj01W"

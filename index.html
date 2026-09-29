@@ -194,6 +194,21 @@
     <div class="card" style="overflow-x:auto;padding:0">
       <table id="plan-tabla" style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"></table>
     </div>
+
+    <div class="sec" style="margin-top:1.75rem">Control de tareas por ejercicio</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.6rem">Vista tipo semaforo de todo el ejercicio, para revisar sin tener que preguntar</div>
+    <div class="row-gap" style="margin-bottom:.5rem">
+      <select class="sel" id="plan-emp-sel" onchange="renderPlanControl()"></select>
+    </div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.5rem" id="plan-control-lbl"></div>
+    <div class="card" style="overflow-x:auto;padding:0" id="plan-control-wrap"></div>
+    <div class="row-gap" style="margin-top:.6rem;font-size:11px;color:var(--gray);flex-wrap:wrap">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#38A169;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Hecho</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ECC94B;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Pendiente</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#9F7AEA;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Espera cliente</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#E2E8F0;border-radius:2px;margin-right:3px;vertical-align:middle"></span>No corresponde</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#F7FAFC;border:1px solid #E2E8F0;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Sin registrar</span>
+    </div>
   </div>
 
   <!-- PENDIENTES -->

@@ -196,6 +196,18 @@ button:hover{background:var(--grayl)}
 #plan-tabla .pt-empty{color:#CBD5E0;text-align:center}
 #plan-tabla .pt-total-row td{background:#F0F4F8;font-weight:700;border-top:2px solid var(--border)}
 #plan-tabla .pt-total-row .pt-emp{background:#F0F4F8}
+#plan-control-tabla{width:100%;border-collapse:collapse;font-size:11px}
+#plan-control-tabla th{background:var(--navy);color:white;padding:6px 8px;font-size:10px;text-align:center;white-space:nowrap}
+#plan-control-tabla th:first-child{text-align:left}
+#plan-control-tabla td{padding:0;text-align:center;border:2px solid white;width:34px;height:30px;font-weight:700;font-size:12px}
+#plan-control-tabla .pc-tarea{background:white!important;text-align:left!important;padding:6px 10px!important;font-weight:600;color:#2D3748;white-space:nowrap;border:none;border-bottom:0.5px solid var(--border)}
+#plan-control-tabla .pc-tarea-cierre{border-left:3px solid var(--purple)}
+#plan-control-tabla .pc-hecho{background:#38A169;color:white}
+#plan-control-tabla .pc-pendiente{background:#ECC94B;color:#744210}
+#plan-control-tabla .pc-espera{background:#9F7AEA;color:white}
+#plan-control-tabla .pc-nc{background:#E2E8F0;color:#A0AEC0}
+#plan-control-tabla .pc-vacio{background:#F7FAFC}
+#plan-control-tabla .pc-na{background:transparent;border-color:transparent!important}
 .pend-item{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.6rem .85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
 .pend-item:hover{border-color:var(--accent)}
 .pend-item.pi-atrasado{border-left:3px solid var(--red)}

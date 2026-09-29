@@ -196,7 +196,7 @@ button:hover{background:var(--grayl)}
 #plan-tabla .pt-empty{color:#CBD5E0;text-align:center}
 #plan-tabla .pt-total-row td{background:#F0F4F8;font-weight:700;border-top:2px solid var(--border)}
 #plan-tabla .pt-total-row .pt-emp{background:#F0F4F8}
-#plan-control-tabla{width:100%;border-collapse:collapse;font-size:11px}
+#plan-control-tabla{border-collapse:collapse;font-size:11px;white-space:nowrap}
 #plan-control-tabla th{background:var(--navy);color:white;padding:6px 8px;font-size:10px;text-align:center;white-space:nowrap}
 #plan-control-tabla th:first-child{text-align:left}
 #plan-control-tabla td{padding:0;text-align:center;border:2px solid white;width:34px;height:30px;font-weight:700;font-size:12px}

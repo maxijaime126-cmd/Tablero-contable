@@ -1014,6 +1014,57 @@ function renderPlanificacion(){
   });
   cuerpo+=`<tr class="pt-total-row"><td class="pt-emp">TOTAL</td>${totalesCol.map(m=>`<td class="pt-val">${m?fmtMin(m):'--'}</td>`).join('')}<td class="pt-val">${totalGeneral?fmtMin(totalGeneral):'--'}</td></tr>`;
   tabla.innerHTML=thead+'<tbody>'+cuerpo+'</tbody>';
+  renderPlanControl();
+}
+
+// ═══ CONTROL DE TAREAS POR EJERCICIO (vista tipo semaforo, todo el ejercicio de un vistazo) ═══
+function buildPlanEmpSel(){
+  const s=document.getElementById('plan-emp-sel');if(!s)return;
+  const prev=s.value;
+  s.innerHTML='';
+  EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});
+  s.value=prev&&EMPRESAS[prev]?prev:0;
+}
+function celdaEstado(est){
+  const map={
+    'Hecho':{cls:'pc-hecho',lbl:'✓'},
+    'Pendiente':{cls:'pc-pendiente',lbl:'!'},
+    'Esperando Cliente':{cls:'pc-espera',lbl:'⏳'},
+    'No Corresponde':{cls:'pc-nc',lbl:'—'}
+  };
+  const m=map[est];
+  if(!m)return '<td class="pc-vacio" title="Sin registrar"></td>';
+  return `<td class="${m.cls}" title="${est}">${m.lbl}</td>`;
+}
+function renderPlanControl(){
+  buildPlanEmpSel();
+  const empIdx=parseInt(document.getElementById('plan-emp-sel').value);
+  const ej=ejActivoDeEmpresa(empIdx);
+  const wrap=document.getElementById('plan-control-wrap');
+  if(!ej){
+    document.getElementById('plan-control-lbl').textContent='';
+    wrap.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:1rem">Esta empresa no tiene un ejercicio abierto.</div>';
+    return;
+  }
+  const mesesEj=getMesesEj(ej)||[];
+  const idxTareas=tareasDeEmpresa(empIdx);
+  document.getElementById('plan-control-lbl').textContent=`${EMPRESAS[empIdx]} · Ejercicio ${ej.numero} (${fmtDate(ej.inicio)} → ${fmtDate(ej.cierre)})`;
+  const anioBase=mesesEj.length?mesesEj[0].anio:null;
+  const thead=`<thead><tr><th>Tarea</th>${mesesEj.map(({mes,anio})=>`<th>${MESES[mes].slice(0,3)}${anio!==anioBase?" '"+String(anio).slice(2):''}</th>`).join('')}</tr></thead>`;
+  let cuerpo='';
+  idxTareas.forEach(ti=>{
+    const celdas=mesesEj.map(({mes,anio})=>celdaEstado(getE(mes,empIdx,ti,anio))).join('');
+    cuerpo+=`<tr><td class="pc-tarea">${TAREAS[ti]}</td>${celdas}</tr>`;
+  });
+  if(ej.tareascierre&&ej.tareascierre.length){
+    const ultimoIdx=mesesEj.length-1;
+    ej.tareascierre.forEach((tc,ci)=>{
+      const est=getCierreE(ej._idx,ci);
+      const celdas=mesesEj.map((_,i)=>i===ultimoIdx?celdaEstado(est):'<td class="pc-na"></td>').join('');
+      cuerpo+=`<tr><td class="pc-tarea pc-tarea-cierre">${tc.nombre} <span class="tarea-type tt-cierre">CIERRE</span></td>${celdas}</tr>`;
+    });
+  }
+  wrap.innerHTML=`<table id="plan-control-tabla">${thead}<tbody>${cuerpo}</tbody></table>`;
 }
 
 // ═══ HOJA DE TRABAJO EN PDF (para delegar tareas a una persona) ═══

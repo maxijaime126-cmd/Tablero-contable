@@ -37,6 +37,7 @@
     <button class="tab" onclick="showPanel('trabajo',this)"><i class="ti ti-pencil"></i> Cargar trabajo</button>
     <button class="tab" onclick="showPanel('ejercicios',this)"><i class="ti ti-book"></i> Ejercicios</button>
     <button class="tab" onclick="showPanel('tiempos',this)"><i class="ti ti-clock"></i> Tiempos</button>
+    <button class="tab" onclick="showPanel('planificacion',this)"><i class="ti ti-table"></i> Planificacion</button>
     <button class="tab" onclick="showPanel('anual',this)"><i class="ti ti-trending-up"></i> Resumen anual</button>
     <button class="tab" onclick="showPanel('pendientes',this)"><i class="ti ti-alert-circle"></i> Pendientes</button>
     <button class="tab" onclick="showPanel('config',this)"><i class="ti ti-settings"></i> Config</button>
@@ -172,6 +173,26 @@
         <div class="sec" style="margin-top:1rem">Tiempo por tipo de tarea</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="anual-tareas"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- PLANIFICACION -->
+  <div id="panel-planificacion" class="panel">
+    <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Carga de trabajo por empresa y tarea</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Cuanto tiempo lleva cada tarea, en cada empresa, mes a mes</div>
+      </div>
+      <div class="row-gap">
+        <select class="sel" id="plan-mes-sel" onchange="renderPlanificacion()"></select>
+        <button class="btn-primary" onclick="openHojaTrabajoModal()"><i class="ti ti-file-type-pdf"></i> Generar hoja de trabajo</button>
+      </div>
+    </div>
+    <div class="sec" style="margin-top:0">Promedio historico por tarea (todas las empresas y meses)</div>
+    <div class="kpi-strip" id="plan-promedios"></div>
+    <div class="sec">Tiempo por empresa y tarea — <span id="plan-mes-lbl" style="color:var(--accent)"></span></div>
+    <div class="card" style="overflow-x:auto;padding:0">
+      <table id="plan-tabla" style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"></table>
     </div>
   </div>
 
@@ -367,6 +388,23 @@
     <div class="modal-btns">
       <button onclick="closeNuevaTareaModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveNuevaTarea()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HOJA DE TRABAJO (elegir empresas para el PDF) -->
+<div class="modal-overlay" id="modal-hoja-trabajo">
+  <div class="modal">
+    <h3>Generar hoja de trabajo</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Elegi una o varias empresas. El PDF muestra las tareas de cada una con el tiempo promedio historico, para entregarle a alguien que se suma a trabajar.</div>
+    <div class="row-gap" style="margin-bottom:.5rem">
+      <button class="btn-ghost btn-sm" onclick="marcarTodasHojaTrabajo(true)">Marcar todas</button>
+      <button class="btn-ghost btn-sm" onclick="marcarTodasHojaTrabajo(false)">Desmarcar todas</button>
+    </div>
+    <div class="cfg-box"><div id="hoja-trabajo-list"></div></div>
+    <div class="modal-btns">
+      <button onclick="closeHojaTrabajoModal()">Cancelar</button>
+      <button class="btn-primary" onclick="generarHojaTrabajo()"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
     </div>
   </div>
 </div>

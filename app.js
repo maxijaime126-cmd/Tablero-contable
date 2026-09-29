@@ -951,6 +951,116 @@ function renderPendientes(){
   renderList(esteMes,'pend-mes',false);
 }
 
+// ═══ PLANIFICACION (tiempo por empresa y tarea, promedios historicos, hoja de trabajo en PDF) ═══
+function buildPlanMesSel(){
+  const s=document.getElementById('plan-mes-sel');if(!s)return;s.innerHTML='';
+  MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});
+  s.value=MES_ACTUAL;
+}
+// promedio historico de una tarea, juntando todas las empresas/meses/anios (una muestra por mes trabajado, no por registro individual)
+function historicoPorTarea(){
+  const acc={};
+  TAREAS.forEach((_,ti)=>acc[ti]={sum:0,grupos:new Set()});
+  getYears().forEach(yr=>{
+    (getYD(yr).tiempos||[]).forEach(r=>{
+      if(r.tipo!=='rutinaria'||!acc[r.tarea])return;
+      acc[r.tarea].sum+=r.mins;
+      acc[r.tarea].grupos.add(`${r.emp}_${r.mes}_${yr}`);
+    });
+  });
+  const res={};
+  TAREAS.forEach((_,ti)=>{const n=acc[ti].grupos.size;res[ti]={promedio:n?Math.round(acc[ti].sum/n):null,n};});
+  return res;
+}
+// promedio historico de una tarea puntual para UNA empresa (para la hoja de trabajo)
+function historicoEmpTarea(empIdx,tareaIdx){
+  let sum=0;const grupos=new Set();
+  getYears().forEach(yr=>{
+    (getYD(yr).tiempos||[]).forEach(r=>{
+      if(r.tipo!=='rutinaria'||r.emp!==empIdx||r.tarea!==tareaIdx)return;
+      sum+=r.mins;grupos.add(`${r.mes}_${yr}`);
+    });
+  });
+  const n=grupos.size;
+  return n?Math.round(sum/n):null;
+}
+function renderPlanificacion(){
+  const mesSel=document.getElementById('plan-mes-sel');
+  const mes=parseInt(mesSel.value);
+  document.getElementById('plan-mes-lbl').textContent=`${MESES[mes]} ${activeYear}`;
+  // promedios historicos por tarea
+  const hist=historicoPorTarea();
+  const kpiEl=document.getElementById('plan-promedios');kpiEl.innerHTML='';
+  TAREAS.forEach((t,ti)=>{
+    const h=hist[ti];
+    kpiEl.innerHTML+=`<div class="kpi"><div class="kpi-label">${t}</div><div class="kpi-val" style="font-size:16px">${h.promedio!==null?fmtMin(h.promedio):'--'}</div><div class="kpi-sub">${h.n} mes(es) con datos</div></div>`;
+  });
+  // tabla empresa x tarea
+  const tabla=document.getElementById('plan-tabla');
+  const thead=`<thead><tr><th>Empresa</th>${TAREAS.map(t=>`<th>${t}</th>`).join('')}<th>Total</th></tr></thead>`;
+  const totalesCol=TAREAS.map(()=>0);
+  let totalGeneral=0,cuerpo='';
+  EMPRESAS.forEach((emp,ei)=>{
+    const activos=tareasDeEmpresa(ei);
+    let totalFila=0,celdas='';
+    TAREAS.forEach((_,ti)=>{
+      if(!activos.includes(ti)){celdas+='<td class="pt-na">—</td>';return;}
+      const mins=tiemposYr(activeYear).filter(r=>r.emp===ei&&r.mes===mes&&r.tarea===ti&&r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
+      totalFila+=mins;totalesCol[ti]+=mins;
+      celdas+=mins?`<td class="pt-val">${fmtMin(mins)}</td>`:'<td class="pt-empty">--</td>';
+    });
+    totalGeneral+=totalFila;
+    cuerpo+=`<tr><td class="pt-emp">${emp}</td>${celdas}<td class="pt-val" style="color:var(--accent)">${totalFila?fmtMin(totalFila):'--'}</td></tr>`;
+  });
+  cuerpo+=`<tr class="pt-total-row"><td class="pt-emp">TOTAL</td>${totalesCol.map(m=>`<td class="pt-val">${m?fmtMin(m):'--'}</td>`).join('')}<td class="pt-val">${totalGeneral?fmtMin(totalGeneral):'--'}</td></tr>`;
+  tabla.innerHTML=thead+'<tbody>'+cuerpo+'</tbody>';
+}
+
+// ═══ HOJA DE TRABAJO EN PDF (para delegar tareas a una persona) ═══
+function openHojaTrabajoModal(){
+  const list=document.getElementById('hoja-trabajo-list');list.innerHTML='';
+  EMPRESAS.forEach((e,i)=>{
+    const row=document.createElement('label');row.className='cfg-row';row.style.cursor='pointer';
+    row.innerHTML=`<input type="checkbox" data-idx="${i}" style="margin-right:4px"> <span style="flex:1">${e}</span>`;
+    list.appendChild(row);
+  });
+  document.getElementById('modal-hoja-trabajo').classList.add('open');
+}
+function closeHojaTrabajoModal(){document.getElementById('modal-hoja-trabajo').classList.remove('open');}
+function marcarTodasHojaTrabajo(valor){
+  document.querySelectorAll('#hoja-trabajo-list input[type=checkbox]').forEach(c=>c.checked=valor);
+}
+function generarHojaTrabajo(){
+  const elegidas=[...document.querySelectorAll('#hoja-trabajo-list input[type=checkbox]')].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+  if(!elegidas.length){toast('Elegi al menos una empresa',true);return;}
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  let bloques='';
+  elegidas.forEach(ei=>{
+    const activos=tareasDeEmpresa(ei);
+    const filas=activos.map(ti=>{
+      const prom=historicoEmpTarea(ei,ti);
+      return `<tr><td style="width:22px"><div style="width:14px;height:14px;border:1.5px solid #718096;border-radius:3px"></div></td><td>${TAREAS[ti]}</td><td style="text-align:right;font-weight:600">${prom!==null?fmtMin(prom):'sin datos previos'}</td><td style="width:35%"></td></tr>`;
+    }).join('');
+    bloques+=`
+    <div style="margin-bottom:22px;page-break-inside:avoid">
+      <div style="font-size:14px;font-weight:700;color:#1B2A4A;border-bottom:2px solid #1B2A4A;padding-bottom:4px;margin-bottom:6px">${EMPRESAS[ei]}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#EDF2F7"><th style="padding:5px;text-align:left;width:22px"></th><th style="padding:5px;text-align:left">Tarea</th><th style="padding:5px;text-align:right">Tiempo estimado</th><th style="padding:5px;text-align:left">Notas</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+  });
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Hoja de trabajo</title>
+  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:24px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}td,th{border-bottom:1px solid #E2E8F0}.footer{margin-top:20px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:10px}}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable</div></div><div style="text-align:right"><div style="font-weight:700">Hoja de trabajo</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  ${bloques}
+  <div class="footer">El tiempo estimado es un promedio historico de lo que llevo esta tarea en esta empresa. Puede variar segun el mes.</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
+  closeHojaTrabajoModal();
+  toast(`Hoja generada para ${elegidas.length} empresa(s)`);
+}
+
 function renderAnual(){
   document.getElementById('anual-yr').textContent=activeYear;
   let totalH=0,totalP=0;for(let m=0;m<12;m++){totalH+=countMes(m,'Hecho');totalP+=countMes(m,'Pendiente');}
@@ -1211,6 +1321,7 @@ function renderAll(){
   else if(activePanel==='ejercicios')renderEjercicios();
   else if(activePanel==='tiempos')renderTiempos();
   else if(activePanel==='anual')renderAnual();
+  else if(activePanel==='planificacion')renderPlanificacion();
   else if(activePanel==='pendientes')renderPendientes();
   else if(activePanel==='config')renderConfig();
 }
@@ -1222,10 +1333,10 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
-function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();}
+function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();buildPlanMesSel();}
 loadData().then(()=>{
   document.getElementById('hdate').textContent=HOY.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   init();renderDashboard();startAutoBackup();suscribirCambiosRemotos();

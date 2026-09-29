@@ -185,6 +185,17 @@ button:hover{background:var(--grayl)}
 .hist-mins{font-weight:700;color:var(--navy);min-width:35px}
 .hist-label{flex:1;color:var(--gray)}
 .hist-fecha{font-size:10px;color:#A0AEC0;white-space:nowrap}
+#plan-tabla th{background:var(--navy);color:white;padding:8px 10px;text-align:left;font-size:11px;position:sticky;top:0}
+#plan-tabla td{padding:7px 10px;border-bottom:0.5px solid var(--border);font-size:12px}
+#plan-tabla tr:last-child td{border-bottom:none}
+#plan-tabla tbody tr:hover{background:var(--grayl)}
+#plan-tabla .pt-emp{font-weight:700;color:var(--navy);position:sticky;left:0;background:white}
+#plan-tabla tbody tr:hover .pt-emp{background:var(--grayl)}
+#plan-tabla .pt-na{color:#CBD5E0;text-align:center}
+#plan-tabla .pt-val{text-align:center;font-weight:600}
+#plan-tabla .pt-empty{color:#CBD5E0;text-align:center}
+#plan-tabla .pt-total-row td{background:#F0F4F8;font-weight:700;border-top:2px solid var(--border)}
+#plan-tabla .pt-total-row .pt-emp{background:#F0F4F8}
 .pend-item{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.6rem .85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
 .pend-item:hover{border-color:var(--accent)}
 .pend-item.pi-atrasado{border-left:3px solid var(--red)}

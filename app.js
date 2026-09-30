@@ -514,15 +514,19 @@ function renderPeriodicaRows(){
 }
 
 function setEstadoWork(ti,estado){
-  setE(workMes,workEmpIdx,ti,estado,workMesYear);
+  const actual=getE(workMes,workEmpIdx,ti,workMesYear);
+  setE(workMes,workEmpIdx,ti,actual===estado?'':estado,workMesYear);
   renderTareaRows();renderWorkStats();refreshActivePill();
 }
 function setEstadoCierre(ejIdx,ci,estado){
-  setCierreE(ejIdx,ci,estado);
+  const actual=getCierreE(ejIdx,ci);
+  setCierreE(ejIdx,ci,actual===estado?'':estado);
   const ej=data.ejercicios[ejIdx];renderCierreRows(ej,ejIdx);renderWorkStats();
 }
 function setEstadoPeriodica(idx,estado){
-  data.periodicas[idx].estado=estado;markUnsaved();renderPeriodicaRows();renderWorkStats();
+  const actual=data.periodicas[idx].estado;
+  data.periodicas[idx].estado=actual===estado?'':estado;
+  markUnsaved();renderPeriodicaRows();renderWorkStats();
 }
 function refreshActivePill(){
   document.querySelectorAll('.mes-pill').forEach(p=>{

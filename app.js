@@ -901,6 +901,66 @@ function renderEjercicios(){
 
 // ═══ TIEMPOS ═══
 function buildTiempoEmpFiltro(){const s=document.getElementById('tiempo-filtro-emp');s.innerHTML='<option value="todos">Todas las empresas</option>';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});}
+
+// ═══ TIEMPO REAL TRABAJADO (agrupado por la FECHA en que se cargo, no por el mes al que pertenece la tarea) ═══
+function buildRealSels(){
+  const sMes=document.getElementById('real-mes-sel'),sAnio=document.getElementById('real-anio-sel');
+  if(!sMes||sMes.options.length)return; // ya construidos, no reiniciar la seleccion del usuario
+  MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;sMes.appendChild(o);});
+  sMes.value=MES_ACTUAL;
+  const anios=new Set(getYears());anios.add(ANO_ACTUAL);
+  [...anios].sort().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sAnio.appendChild(o);});
+  sAnio.value=ANO_ACTUAL;
+}
+// junta, de TODOS los años guardados, los registros cuya fecha real de carga cae en el mes/ano elegido
+function tiemposPorFechaReal(mesReal,anioReal){
+  const regs=[];
+  getYears().forEach(yr=>{
+    (getYD(yr).tiempos||[]).forEach(r=>{
+      if(!r.fecha)return;
+      const[fy,fm]=r.fecha.split('-').map(Number);
+      if(fy===anioReal&&(fm-1)===mesReal)regs.push(r);
+    });
+  });
+  return regs;
+}
+function renderTiempoReal(){
+  buildRealSels();
+  const mesReal=parseInt(document.getElementById('real-mes-sel').value);
+  const anioReal=parseInt(document.getElementById('real-anio-sel').value);
+  const regs=tiemposPorFechaReal(mesReal,anioReal);
+  const total=regs.reduce((a,r)=>a+r.mins,0);
+  const rut=regs.filter(r=>r.tipo==='rutinaria').reduce((a,r)=>a+r.mins,0);
+  const cie=regs.filter(r=>r.tipo==='cierre').reduce((a,r)=>a+r.mins,0);
+  const per=regs.filter(r=>r.tipo==='periodica').reduce((a,r)=>a+r.mins,0);
+  const dias=new Set(regs.map(r=>r.fecha)).size;
+  document.getElementById('kpi-real').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Tiempo trabajado ese mes</div><div class="kpi-val" style="color:var(--navy)">${fmtMin(total)}</div></div>
+    <div class="kpi"><div class="kpi-label">Rutinarias</div><div class="kpi-val" style="color:var(--accent)">${fmtMin(rut)}</div></div>
+    <div class="kpi"><div class="kpi-label">Cierre</div><div class="kpi-val" style="color:var(--purple)">${fmtMin(cie)}</div></div>
+    <div class="kpi"><div class="kpi-label">Periodicas</div><div class="kpi-val" style="color:var(--orange)">${fmtMin(per)}</div></div>
+    <div class="kpi"><div class="kpi-label">Dias con carga</div><div class="kpi-val">${dias}</div></div>
+  `;
+  // agrupar por empresa, y dentro de cada empresa mostrar a que mes pertenecia realmente cada tarea
+  const porEmp={};
+  regs.forEach(r=>{
+    if(!porEmp[r.emp])porEmp[r.emp]={total:0,detalle:{}};
+    porEmp[r.emp].total+=r.mins;
+    const key=`${r.mes}`;
+    porEmp[r.emp].detalle[key]=(porEmp[r.emp].detalle[key]||0)+r.mins;
+  });
+  const empsConDatos=Object.keys(porEmp).map(Number).sort((a,b)=>porEmp[b].total-porEmp[a].total);
+  const lista=document.getElementById('real-lista');
+  if(!empsConDatos.length){lista.innerHTML='<div style="font-size:12px;color:#A0AEC0;padding:1rem">Sin tiempo cargado con fecha real en este mes.</div>';return;}
+  lista.innerHTML=empsConDatos.map(ei=>{
+    const d=porEmp[ei];
+    const detalleHtml=Object.entries(d.detalle).sort((a,b)=>a[0]-b[0]).map(([mesTarea,mins])=>`<span class="ej-tag" style="background:var(--grayl);color:var(--gray)">tarea de ${MESES[mesTarea]}: ${fmtMin(mins)}</span>`).join(' ');
+    return `<div class="stat-row" style="padding:10px 14px;flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%"><strong>${EMPRESAS[ei]||'?'}</strong><span class="stat-val" style="color:var(--navy)">${fmtMin(d.total)}</span></div>
+      <div>${detalleHtml}</div>
+    </div>`;
+  }).join('');
+}
 function renderTiempos(){
   const filtroEmp=document.getElementById('tiempo-filtro-emp').value;
   const sort=document.getElementById('tiempo-sort').value;
@@ -1451,7 +1511,7 @@ function renderAll(){
   if(activePanel==='dashboard')renderDashboard();
   else if(activePanel==='trabajo')renderTrabajo();
   else if(activePanel==='ejercicios')renderEjercicios();
-  else if(activePanel==='tiempos')renderTiempos();
+  else if(activePanel==='tiempos'){renderTiempos();renderTiempoReal();}
   else if(activePanel==='anual')renderAnual();
   else if(activePanel==='planificacion')renderPlanificacion();
   else if(activePanel==='pendientes')renderPendientes();

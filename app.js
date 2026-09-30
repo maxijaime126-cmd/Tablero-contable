@@ -1231,13 +1231,13 @@ function generarHojaTrabajo(){
     const activos=tareasDeEmpresa(ei);
     const filas=activos.map(ti=>{
       const prom=historicoEmpTarea(ei,ti);
-      return `<tr><td style="width:22px"><div style="width:14px;height:14px;border:1.5px solid #718096;border-radius:3px"></div></td><td>${TAREAS[ti]}</td><td style="text-align:right;font-weight:600">${prom!==null?fmtMin(prom):'sin datos previos'}</td><td style="width:35%"></td></tr>`;
+      return `<tr><td style="width:22px"><div style="width:14px;height:14px;border:1.5px solid #718096;border-radius:3px"></div></td><td>${TAREAS[ti]}</td><td style="text-align:right;font-weight:600">${prom!==null?fmtMin(prom):'sin datos previos'}</td><td style="width:16%;border-bottom:1px solid #A0AEC0"></td><td style="width:22%"></td></tr>`;
     }).join('');
     bloques+=`
     <div style="margin-bottom:22px;page-break-inside:avoid">
       <div style="font-size:14px;font-weight:700;color:#1B2A4A;border-bottom:2px solid #1B2A4A;padding-bottom:4px;margin-bottom:6px">${EMPRESAS[ei]}</div>
       <table style="width:100%;border-collapse:collapse;font-size:11px">
-        <thead><tr style="background:#EDF2F7"><th style="padding:5px;text-align:left;width:22px"></th><th style="padding:5px;text-align:left">Tarea</th><th style="padding:5px;text-align:right">Tiempo estimado</th><th style="padding:5px;text-align:left">Notas</th></tr></thead>
+        <thead><tr style="background:#EDF2F7"><th style="padding:5px;text-align:left;width:22px"></th><th style="padding:5px;text-align:left">Tarea</th><th style="padding:5px;text-align:right">Tiempo estimado</th><th style="padding:5px;text-align:left">Tiempo real</th><th style="padding:5px;text-align:left">Notas</th></tr></thead>
         <tbody>${filas}</tbody>
       </table>
     </div>`;
@@ -1246,7 +1246,7 @@ function generarHojaTrabajo(){
   <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:24px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}td,th{border-bottom:1px solid #E2E8F0}.footer{margin-top:20px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:10px}}</style></head><body>
   <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable</div></div><div style="text-align:right"><div style="font-weight:700">Hoja de trabajo</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
   ${bloques}
-  <div class="footer">El tiempo estimado es un promedio historico de lo que llevo esta tarea en esta empresa. Puede variar segun el mes.</div>
+  <div class="footer">El tiempo estimado es un promedio historico de lo que llevo esta tarea en esta empresa. Anota el tiempo real al terminar cada tarea para cargarlo despues en el sistema.</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
   closeHojaTrabajoModal();

@@ -253,6 +253,73 @@ function avanceHastaHoy(ej){
   if(!transcurridos)return{transcurridos:0,totalMeses:meses.length,pct:null};
   return{transcurridos,totalMeses:meses.length,hechas,esperadas,pct:esperadas>0?Math.round(hechas/esperadas*100):100};
 }
+// avance de TODO el ejercicio (rutinarias + cierre), sin importar el mes que este seleccionado en el resto de la app
+function avanceEjercicioCompleto(ej){
+  if(!ej)return null;
+  const meses=getMesesEj(ej)||[];
+  const idxTareas=tareasDeEmpresa(ej.emp);
+  let hechas=0,esperadas=0;
+  meses.forEach(({mes,anio})=>{
+    idxTareas.forEach(ti=>{
+      const est=getE(mes,ej.emp,ti,anio);
+      if(est==='No Corresponde')return;
+      esperadas++;
+      if(est==='Hecho')hechas++;
+    });
+  });
+  (ej.tareascierre||[]).forEach((tc,ci)=>{
+    const est=getCierreE(ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej),ci);
+    if(est==='No Corresponde')return;
+    esperadas++;
+    if(est==='Hecho')hechas++;
+  });
+  return{hechas,esperadas,pct:esperadas>0?Math.round(hechas/esperadas*100):0};
+}
+// promedio historico de una tarea de CIERRE, buscando por nombre en todos los ejercicios (pasados y actual) de esa empresa
+function historicoCierrePorNombre(empIdx,nombre){
+  const nombreLower=(nombre||'').trim().toLowerCase();
+  let sum=0,instancias=0;
+  data.ejercicios.forEach(ej=>{
+    if(ej.emp!==empIdx)return;
+    const idx=data.ejercicios.indexOf(ej);
+    const mesesEj=getMesesEj(ej)||[];
+    (ej.tareascierre||[]).forEach((tc,ci)=>{
+      if((tc.nombre||'').trim().toLowerCase()!==nombreLower)return;
+      let mins=0;
+      mesesEj.forEach(({mes,anio})=>{mins+=tiemposYr(anio).filter(r=>r.emp===empIdx&&r.mes===mes&&r.tipo==='cierre'&&r.tarea===ci).reduce((a,r)=>a+r.mins,0);});
+      if(mins>0){sum+=mins;instancias++;}
+    });
+  });
+  return instancias?Math.round(sum/instancias):null;
+}
+// tiempo estimado para terminar el ejercicio, separado en rutinarias (con dato historico solido) y cierre (historico por nombre, puede no haber todavia)
+function estimacionRestante(ej){
+  if(!ej)return null;
+  const meses=getMesesEj(ej)||[];
+  const idxTareas=tareasDeEmpresa(ej.emp);
+  let rutPend=0,rutMins=0,rutSinDatos=0;
+  idxTareas.forEach(ti=>{
+    const prom=historicoEmpTarea(ej.emp,ti);
+    meses.forEach(({mes,anio})=>{
+      const est=getE(mes,ej.emp,ti,anio);
+      if(est==='Hecho'||est==='No Corresponde')return;
+      rutPend++;
+      if(prom!==null)rutMins+=prom;else rutSinDatos++;
+    });
+  });
+  let ciePend=0,cieMins=0,cieSinDatos=0;
+  (ej.tareascierre||[]).forEach((tc,ci)=>{
+    const est=getCierreE(ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej),ci);
+    if(est==='Hecho'||est==='No Corresponde')return;
+    ciePend++;
+    const prom=historicoCierrePorNombre(ej.emp,tc.nombre);
+    if(prom!==null)cieMins+=prom;else cieSinDatos++;
+  });
+  return{
+    rutinaria:{pendientes:rutPend,mins:rutMins,sinDatos:rutSinDatos},
+    cierre:{pendientes:ciePend,mins:cieMins,sinDatos:cieSinDatos}
+  };
+}
 function fmtMin(m){if(!m||m===0)return'--';if(m<60)return m+'m';const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
 function parseDate(iso){if(!iso)return null;const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
 function fmtDate(iso){if(!iso)return'';return parseDate(iso).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -306,11 +373,15 @@ function renderDashboard(){
   `;
   const grid=document.getElementById('emp-grid');grid.innerHTML='';
   EMPRESAS.forEach((emp,ei)=>{
-    const pctE=pctEmpMesYr(mes,ei,activeYear),w=Math.round(pctE*100);
     const minsM=totalMinsEmpMesYr(ei,mes,activeYear);
     const ej=ejActivoDeEmpresa(ei);
     const minsEj=totalMinsEjercicio(ej);
     const diasC=ej?diasRestantes(ej.cierre):null;
+    // el numero grande de la tarjeta es el avance de TODO el ejercicio vigente (no del mes elegido arriba),
+    // para no mezclar con un ejercicio viejo ya cerrado que haya caido en el mismo mes/ano calendario
+    const avanceEj=ej?avanceEjercicioCompleto(ej):null;
+    const w=avanceEj?avanceEj.pct:Math.round(pctEmpMesYr(mes,ei,activeYear)*100);
+    const subEj=avanceEj?`<div style="font-size:10px;color:var(--gray);margin-top:1px">${avanceEj.hechas}/${avanceEj.esperadas} tareas del ejercicio</div>`:'';
     const dots=tareasDeEmpresa(ei).map(t=>{const est=getE(mes,ei,t);const cls=est==='Hecho'?'d-hecho':est==='Pendiente'?'d-pendiente':est==='Esperando Cliente'?'d-espera':est==='No Corresponde'?'d-nc':'d-empty';return`<div class="dot ${cls}" title="${TAREAS[t]}: ${est||'Sin registrar'}"></div>`;}).join('');
     let ejHtml='';
     if(ej){
@@ -320,7 +391,7 @@ function renderDashboard(){
     }
     const card=document.createElement('div');card.className='emp-card'+(w===100?' complete':'');
     card.innerHTML=`
-      <div class="emp-card-top"><div><div class="emp-name">${emp}</div>${ejHtml}</div><span class="emp-badge ${badgeCls(pctE)}">${w}%</span></div>
+      <div class="emp-card-top"><div><div class="emp-name">${emp}</div>${ejHtml}</div><div style="text-align:right"><span class="emp-badge ${badgeCls(w/100)}">${w}%</span>${subEj}</div></div>
       <div class="tarea-dots">${dots}</div>
       <div class="prog-wrap"><div class="prog-bar" style="width:${w}%"></div></div>
       <div class="emp-footer"><span>Mes: <strong>${fmtMin(minsM)}</strong></span><span>${ej?'Ejercicio':'Ano'}: <strong>${ej?fmtMin(minsEj):fmtMin(totalMinsEmpYr(ei,activeYear))}</strong></span></div>`;
@@ -782,6 +853,7 @@ function renderEjercicios(){
     const cierrePend=(ej.tareascierre||[]).filter((_,ci)=>getCierreE(idx,ci)==='Pendiente');
     const minsTotal=totalMinsEjercicio(ej);
     const alDia=avanceHastaHoy(ej);
+    const estim=!ej.cerrado?estimacionRestante(ej):null;
     const diasHtml=!ej.cerrado&&d!==null?`<div style="font-size:11px;font-weight:700;color:${venc||urg?'var(--red)':d<=90?'var(--orange)':'var(--green)'};margin-top:.3rem">${venc?`Vencio hace ${Math.abs(d)} dias`:d===0?'Vence hoy':`Vence en ${d} dias`}</div>`:'';
     grid.innerHTML+=`<div class="ej-card ${cls}">
       <div style="position:absolute;top:7px;right:7px;display:flex;gap:4px">
@@ -798,6 +870,11 @@ function renderEjercicios(){
       ${diasHtml}
       ${tot?`<div style="margin:.5rem 0"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--gray)">Avance rutinarias</span><span style="font-weight:700">${pct}%</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct===100?'var(--green2)':pct>60?'var(--accent)':'var(--orange)'}"></div></div></div>`:''}
       ${alDia&&alDia.pct!==null?`<div style="margin:.4rem 0;padding:.4rem .6rem;border-radius:var(--radius);background:${alDia.pct>=90?'#F0FFF4':alDia.pct>=60?'#FFFAF0':'#FFF5F5'}"><div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--gray)">Al dia (mes ${alDia.transcurridos} de ${alDia.totalMeses})</span><span style="font-weight:700;color:${alDia.pct>=90?'var(--green)':alDia.pct>=60?'var(--orange)':'var(--red)'}">${alDia.pct}%</span></div></div>`:''}
+      ${estim&&(estim.rutinaria.pendientes||estim.cierre.pendientes)?`<div style="margin:.4rem 0;padding:.4rem .6rem;border-radius:var(--radius);background:#EBF8FF;border:0.5px solid #BEE3F8">
+        <div style="font-size:10px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px">⏱ Estimado para terminar</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--gray)">Rutinarias (${estim.rutinaria.pendientes} pend.)</span><span style="font-weight:700">${estim.rutinaria.mins?fmtMin(estim.rutinaria.mins):'--'}${estim.rutinaria.sinDatos?` <span style="color:#A0AEC0;font-weight:400">+${estim.rutinaria.sinDatos} sin dato</span>`:''}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px"><span style="color:var(--gray)">Cierre (${estim.cierre.pendientes} pend.)</span><span style="font-weight:700">${estim.cierre.mins?fmtMin(estim.cierre.mins):(estim.cierre.pendientes?'sin historico aun':'--')}${estim.cierre.mins&&estim.cierre.sinDatos?` <span style="color:#A0AEC0;font-weight:400">+${estim.cierre.sinDatos} sin dato</span>`:''}</span></div>
+      </div>`:''}
       ${pend.length?`<div style="margin-top:.3rem">${pend.map(p=>`<span class="ej-tag">${p}</span>`).join('')}</div>`:''}
       ${cierrePend.length?`<div style="margin-top:.3rem">${cierrePend.map(tc=>`<span class="ej-tag" style="background:var(--purplel);color:var(--purple)">${tc.nombre}</span>`).join('')}</div>`:''}
       ${!pend.length&&!cierrePend.length&&tot?`<div style="font-size:11px;color:var(--green);margin-top:.3rem">✅ Sin pendientes</div>`:''}

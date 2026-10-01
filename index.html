@@ -274,6 +274,14 @@
         </div>
       </div>
     </div>
+    <div class="sec" style="margin-top:1.25rem">Ritmo de carga normal</div>
+    <div class="card" style="padding:.85rem 1rem">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:.6rem">Si siempre cargan el trabajo "a mes vencido" (ej: en septiembre se termina lo de agosto), poné 1 aca para que no se marque como atrasado algo que todavia es normal que falte.</div>
+      <div class="row-gap">
+        <label style="font-size:12px;font-weight:600">Meses de demora normal:</label>
+        <input type="number" id="margen-atraso-inp" min="0" max="3" style="width:60px;font-size:13px;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);font-family:inherit;text-align:center" onchange="saveMargenAtraso()">
+      </div>
+    </div>
     <div class="sec" style="margin-top:1.25rem">Plantillas de tareas de cierre</div>
     <div style="font-size:11px;color:var(--gray);margin-bottom:.5rem">Guarda un conjunto de tareas de cierre (ej. para SRL, Cooperativas) y aplicalo con un clic a cualquier ejercicio.</div>
     <div class="cfg-box">

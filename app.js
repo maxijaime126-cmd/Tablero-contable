@@ -1119,11 +1119,14 @@ function detalleFaltante(ej){
   const mesesEj=getMesesEj(ej)||[];
   const idxTareas=tareasDeEmpresa(ej.emp);
   const anioBase=mesesEj.length?mesesEj[0].anio:null;
+  const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
   const porTarea={};
   idxTareas.forEach(ti=>{
     mesesEj.forEach(({mes,anio})=>{
+      const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
+      if(!esExigible)return; // todavia no llega ese mes, no cuenta como falta
       const est=getE(mes,ej.emp,ti,anio);
-      if(est!=='Pendiente'&&est!=='Esperando Cliente')return;
+      if(est==='Hecho'||est==='No Corresponde')return; // blanco/Pendiente/Esperando Cliente cuentan como falta
       const nombre=TAREAS[ti];
       if(!porTarea[nombre])porTarea[nombre]=[];
       porTarea[nombre].push(MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':''));
@@ -1131,25 +1134,45 @@ function detalleFaltante(ej){
   });
   const rutinariasTxt=Object.entries(porTarea).map(([n,meses])=>`${n}: ${meses.join(', ')}`);
   const idxReal=ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej);
-  const cierrePend=(ej.tareascierre||[]).filter((tc,ci)=>{const est=getCierreE(idxReal,ci);return est==='Pendiente'||est==='Esperando Cliente';}).map(tc=>tc.nombre);
+  // el cierre de balance NUNCA cuenta como "atrasado" (se hace al final del ejercicio), solo se informa aparte
+  const cierrePend=(ej.tareascierre||[]).filter((tc,ci)=>{const est=getCierreE(idxReal,ci);return est!=='Hecho'&&est!=='No Corresponde';}).map(tc=>tc.nombre);
   return{rutinariasTxt,cierrePend};
+}
+// tiempo estimado de SOLO lo atrasado hasta hoy (no cuenta meses futuros del ejercicio, ni el cierre de balance)
+function estimacionAtrasada(ej){
+  const meses=getMesesEj(ej)||[];
+  const idxTareas=tareasDeEmpresa(ej.emp);
+  const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
+  let pendientes=0,mins=0,sinDatos=0;
+  idxTareas.forEach(ti=>{
+    const prom=historicoEmpTarea(ej.emp,ti);
+    meses.forEach(({mes,anio})=>{
+      const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
+      if(!esExigible)return;
+      const est=getE(mes,ej.emp,ti,anio);
+      if(est==='Hecho'||est==='No Corresponde')return;
+      pendientes++;
+      if(prom!==null)mins+=prom;else sinDatos++;
+    });
+  });
+  return{pendientes,mins,sinDatos};
 }
 function filaResumenEjecutivo(ei){
   const ej=ejActivoDeEmpresa(ei);
   const alDia=avanceHastaHoy(ej);
   const avanceEj=avanceEjercicioCompleto(ej);
-  const estim=estimacionRestante(ej);
+  const estim=estimacionAtrasada(ej);
   const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
   const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
   const estadoHtml=alDiaOk?'<span id="resumen-ejec-badge" style="background:#C6F6D5;color:#276749">🟢 Al dia</span>':`<span id="resumen-ejec-badge" style="background:#FED7D7;color:#742A2A">🟠 Atrasado (${alDia.pct}%)</span>`;
   const faltaHtml=[...rutinariasTxt.map(t=>`<div>• ${t}</div>`),...cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)].join('')||'<span style="color:var(--green)">Sin pendientes</span>';
-  const totalMins=(estim.rutinaria.mins||0)+(estim.cierre.mins||0);
+  const totalMins=estim.mins||0;
   return`<tr>
     <td class="pt-emp">${EMPRESAS[ei]}<div style="font-size:10px;color:var(--gray);font-weight:400">${ej.numero}</div></td>
     <td>${estadoHtml}</td>
     <td style="white-space:nowrap">${avanceEj.hechas}/${avanceEj.esperadas} <span style="color:var(--gray)">(${avanceEj.pct}%)</span></td>
     <td class="re-falta">${faltaHtml}</td>
-    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}</td>
+    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}${cierrePend.length?'<div style="font-size:9px;font-weight:400;color:var(--gray)">(no incluye cierre)</div>':''}</td>
   </tr>`;
 }
 function renderResumenEjecutivo(){
@@ -1186,18 +1209,18 @@ function generarResumenEjecutivoPDF(){
     const ej=ejActivoDeEmpresa(ei);
     const alDia=avanceHastaHoy(ej);
     const avanceEj=avanceEjercicioCompleto(ej);
-    const estim=estimacionRestante(ej);
+    const estim=estimacionAtrasada(ej);
     const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
     const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
     const estadoTxt=alDiaOk?'🟢 Al dia':`🟠 Atrasado (${alDia.pct}%)`;
     const falta=[...rutinariasTxt,...cierrePend.map(n=>`[CIERRE] ${n}`)].join('<br>')||'Sin pendientes';
-    const totalMins=(estim.rutinaria.mins||0)+(estim.cierre.mins||0);
+    const totalMins=estim.mins||0;
     return`<tr>
       <td><strong>${EMPRESAS[ei]}</strong><br><span style="font-size:10px;color:#718096">${ej.numero} · ${fmtDate(ej.inicio)} - ${fmtDate(ej.cierre)}</span></td>
       <td>${estadoTxt}</td>
       <td style="text-align:center">${avanceEj.hechas}/${avanceEj.esperadas}<br>(${avanceEj.pct}%)</td>
       <td style="font-size:10px">${falta}</td>
-      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}</td>
+      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}${cierrePend.length?'<br><span style="font-size:9px;font-weight:400;color:#A0AEC0">(no incluye cierre)</span>':''}</td>
     </tr>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Resumen ejecutivo</title>

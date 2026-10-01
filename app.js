@@ -122,6 +122,8 @@ async function loadData(){
   if(!data.tareasEmpresa)data.tareasEmpresa={};
   if(!data.periodicas)data.periodicas=[];
   if(!data.plantillasCierre)data.plantillasCierre=[];
+  if(!data.config)data.config={};
+  if(data.config.margenAtraso===undefined)data.config.margenAtraso=1;
   data.ejercicios.forEach(ej=>{
     if(!ej.tareascierre)ej.tareascierre=[];
     if(!ej.estadoscierre)ej.estadoscierre=[];
@@ -233,14 +235,28 @@ function totalMinsEjercicio(ej){
   return meses.reduce((acc,{mes,anio})=>acc+tiemposYr(anio).filter(r=>r.emp===ej.emp&&r.mes===mes).reduce((a,r)=>a+r.mins,0),0);
 }
 // Cuanto llevas hecho de lo que YA deberia estar hecho segun el calendario (meses ya transcurridos)
+// cuantos meses de demora son "normales" antes de considerar algo realmente atrasado
+// (ej: si siempre se carga a mes vencido, el margen es 1 y no se exige el mes actual todavia)
+function getMargenAtraso(){
+  if(!data.config)data.config={};
+  if(data.config.margenAtraso===undefined)data.config.margenAtraso=1;
+  return data.config.margenAtraso;
+}
+function mesLimiteAlDia(){
+  const margen=getMargenAtraso();
+  let mes=HOY.getMonth()-margen,anio=HOY.getFullYear();
+  while(mes<0){mes+=12;anio--;}
+  return{mes,anio};
+}
 function avanceHastaHoy(ej){
   const meses=getMesesEj(ej)||[];
   if(!meses.length)return null;
   const idxTareas=tareasDeEmpresa(ej.emp);
   if(!idxTareas.length)return null;
+  const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
   let transcurridos=0,hechas=0,esperadas=0;
   meses.forEach(({mes,anio})=>{
-    const esPasado=anio<HOY.getFullYear()||(anio===HOY.getFullYear()&&mes<=HOY.getMonth());
+    const esPasado=anio<anioLim||(anio===anioLim&&mes<=mesLim);
     if(!esPasado)return;
     transcurridos++;
     idxTareas.forEach(ti=>{
@@ -1393,7 +1409,16 @@ function renderAnual(){
 }
 
 // ═══ CONFIG ═══
+function saveMargenAtraso(){
+  const val=parseInt(document.getElementById('margen-atraso-inp').value);
+  if(isNaN(val)||val<0){toast('Valor invalido',true);return;}
+  if(!data.config)data.config={};
+  data.config.margenAtraso=val;
+  markUnsaved();saveNow();renderAll();
+  toast('Ritmo de carga actualizado');
+}
 function renderConfig(){
+  const margenInp=document.getElementById('margen-atraso-inp');if(margenInp)margenInp.value=getMargenAtraso();
   document.getElementById('emp-count').textContent=`(${EMPRESAS.length})`;
   const el=document.getElementById('emp-list');el.innerHTML='';
   EMPRESAS.forEach((emp,i)=>{const row=document.createElement('div');row.className='cfg-row';row.innerHTML=`<span class="cfg-num">${i+1}</span><input class="cfg-inp" type="text" value="${emp.replace(/"/g,'&quot;')}" onfocus="this.style.borderColor='var(--accent)';this.style.background='white'" onblur="renombrar('empresa',this,${i})" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn-ghost btn-sm" style="font-size:11px" onclick="openTareasEmpModal(${i})" title="Elegir que tareas rutinarias aplican"><i class="ti ti-list-check"></i> Tareas</button><button class="btn-danger btn-sm" onclick="eliminarEmpresa(${i})"><i class="ti ti-trash"></i></button>`;el.appendChild(row);});

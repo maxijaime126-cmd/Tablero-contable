@@ -1093,6 +1093,107 @@ function renderPendientes(){
 }
 
 // ═══ PLANIFICACION (tiempo por empresa y tarea, promedios historicos, hoja de trabajo en PDF) ═══
+// ═══ RESUMEN EJECUTIVO (estado de cada empresa con ejercicio abierto, de un vistazo) ═══
+let resumenEmpresasFiltro=null; // null = todas las disponibles por defecto
+function empresasConEjercicioAbierto(){
+  return EMPRESAS.map((_,i)=>i).filter(i=>{const ej=ejActivoDeEmpresa(i);return ej&&!ej.cerrado;});
+}
+// agrupa, para un ejercicio, que tareas quedaron Pendiente/Esperando Cliente, con el detalle de en que mes
+function detalleFaltante(ej){
+  const mesesEj=getMesesEj(ej)||[];
+  const idxTareas=tareasDeEmpresa(ej.emp);
+  const anioBase=mesesEj.length?mesesEj[0].anio:null;
+  const porTarea={};
+  idxTareas.forEach(ti=>{
+    mesesEj.forEach(({mes,anio})=>{
+      const est=getE(mes,ej.emp,ti,anio);
+      if(est!=='Pendiente'&&est!=='Esperando Cliente')return;
+      const nombre=TAREAS[ti];
+      if(!porTarea[nombre])porTarea[nombre]=[];
+      porTarea[nombre].push(MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':''));
+    });
+  });
+  const rutinariasTxt=Object.entries(porTarea).map(([n,meses])=>`${n}: ${meses.join(', ')}`);
+  const idxReal=ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej);
+  const cierrePend=(ej.tareascierre||[]).filter((tc,ci)=>{const est=getCierreE(idxReal,ci);return est==='Pendiente'||est==='Esperando Cliente';}).map(tc=>tc.nombre);
+  return{rutinariasTxt,cierrePend};
+}
+function filaResumenEjecutivo(ei){
+  const ej=ejActivoDeEmpresa(ei);
+  const alDia=avanceHastaHoy(ej);
+  const avanceEj=avanceEjercicioCompleto(ej);
+  const estim=estimacionRestante(ej);
+  const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
+  const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
+  const estadoHtml=alDiaOk?'<span id="resumen-ejec-badge" style="background:#C6F6D5;color:#276749">🟢 Al dia</span>':`<span id="resumen-ejec-badge" style="background:#FED7D7;color:#742A2A">🟠 Atrasado (${alDia.pct}%)</span>`;
+  const faltaHtml=[...rutinariasTxt.map(t=>`<div>• ${t}</div>`),...cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)].join('')||'<span style="color:var(--green)">Sin pendientes</span>';
+  const totalMins=(estim.rutinaria.mins||0)+(estim.cierre.mins||0);
+  return`<tr>
+    <td class="pt-emp">${EMPRESAS[ei]}<div style="font-size:10px;color:var(--gray);font-weight:400">${ej.numero}</div></td>
+    <td>${estadoHtml}</td>
+    <td style="white-space:nowrap">${avanceEj.hechas}/${avanceEj.esperadas} <span style="color:var(--gray)">(${avanceEj.pct}%)</span></td>
+    <td class="re-falta">${faltaHtml}</td>
+    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}</td>
+  </tr>`;
+}
+function renderResumenEjecutivo(){
+  const disponibles=empresasConEjercicioAbierto();
+  const incluidas=(resumenEmpresasFiltro?resumenEmpresasFiltro.filter(i=>disponibles.includes(i)):disponibles);
+  const tabla=document.getElementById('resumen-ejec-tabla');if(!tabla)return;
+  const thead='<thead><tr><th>Empresa</th><th>Estado</th><th>Avance</th><th>Que falta</th><th>Tiempo estimado</th></tr></thead>';
+  const filas=incluidas.length?incluidas.map(filaResumenEjecutivo).join(''):'<tr><td colspan="5" style="padding:1rem;color:#A0AEC0">No hay empresas con ejercicio abierto para mostrar.</td></tr>';
+  tabla.innerHTML=thead+'<tbody>'+filas+'</tbody>';
+}
+function openFiltroResumenModal(){
+  const disponibles=empresasConEjercicioAbierto();
+  const actuales=resumenEmpresasFiltro||disponibles;
+  const list=document.getElementById('filtro-resumen-list');list.innerHTML='';
+  disponibles.forEach(ei=>{
+    const row=document.createElement('label');row.className='cfg-row';row.style.cursor='pointer';
+    row.innerHTML=`<input type="checkbox" data-idx="${ei}" ${actuales.includes(ei)?'checked':''} style="margin-right:4px"> <span style="flex:1">${EMPRESAS[ei]}</span>`;
+    list.appendChild(row);
+  });
+  document.getElementById('modal-filtro-resumen').classList.add('open');
+}
+function closeFiltroResumenModal(){document.getElementById('modal-filtro-resumen').classList.remove('open');}
+function marcarTodasFiltroResumen(valor){document.querySelectorAll('#filtro-resumen-list input[type=checkbox]').forEach(c=>c.checked=valor);}
+function saveFiltroResumenModal(){
+  resumenEmpresasFiltro=[...document.querySelectorAll('#filtro-resumen-list input[type=checkbox]')].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+  closeFiltroResumenModal();renderResumenEjecutivo();
+}
+function generarResumenEjecutivoPDF(){
+  const disponibles=empresasConEjercicioAbierto();
+  const incluidas=(resumenEmpresasFiltro?resumenEmpresasFiltro.filter(i=>disponibles.includes(i)):disponibles);
+  if(!incluidas.length){toast('No hay empresas con ejercicio abierto para incluir',true);return;}
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const filas=incluidas.map(ei=>{
+    const ej=ejActivoDeEmpresa(ei);
+    const alDia=avanceHastaHoy(ej);
+    const avanceEj=avanceEjercicioCompleto(ej);
+    const estim=estimacionRestante(ej);
+    const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
+    const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
+    const estadoTxt=alDiaOk?'🟢 Al dia':`🟠 Atrasado (${alDia.pct}%)`;
+    const falta=[...rutinariasTxt,...cierrePend.map(n=>`[CIERRE] ${n}`)].join('<br>')||'Sin pendientes';
+    const totalMins=(estim.rutinaria.mins||0)+(estim.cierre.mins||0);
+    return`<tr>
+      <td><strong>${EMPRESAS[ei]}</strong><br><span style="font-size:10px;color:#718096">${ej.numero} · ${fmtDate(ej.inicio)} - ${fmtDate(ej.cierre)}</span></td>
+      <td>${estadoTxt}</td>
+      <td style="text-align:center">${avanceEj.hechas}/${avanceEj.esperadas}<br>(${avanceEj.pct}%)</td>
+      <td style="font-size:10px">${falta}</td>
+      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}</td>
+    </tr>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Resumen ejecutivo</title>
+  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:24px;font-size:12px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end}table{width:100%;border-collapse:collapse}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.footer{margin-top:18px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:10px}}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable</div></div><div style="text-align:right"><div style="font-weight:700">Resumen ejecutivo — como venimos</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  <table><thead><tr><th>Empresa</th><th>Estado</th><th>Avance</th><th>Que falta</th><th>Tiempo estimado</th></tr></thead><tbody>${filas}</tbody></table>
+  <div class="footer">* junto al mes indica que esa tarea esta esperando documentacion del cliente. El tiempo estimado es un promedio historico, puede variar.</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast(`Resumen generado para ${incluidas.length} empresa(s)`);
+}
+
 function buildPlanMesSel(){
   const s=document.getElementById('plan-mes-sel');if(!s)return;s.innerHTML='';
   MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});
@@ -1126,6 +1227,7 @@ function historicoEmpTarea(empIdx,tareaIdx){
   return n?Math.round(sum/n):null;
 }
 function renderPlanificacion(){
+  renderResumenEjecutivo();
   const mesSel=document.getElementById('plan-mes-sel');
   const mes=parseInt(mesSel.value);
   document.getElementById('plan-mes-lbl').textContent=`${MESES[mes]} ${activeYear}`;
@@ -1525,7 +1627,7 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo','modal-filtro-resumen'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
 function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();buildPlanMesSel();}

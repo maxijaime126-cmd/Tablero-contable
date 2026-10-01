@@ -208,6 +208,12 @@ button:hover{background:var(--grayl)}
 #plan-control-tabla .pc-nc{background:#E2E8F0;color:#A0AEC0}
 #plan-control-tabla .pc-vacio{background:#F7FAFC}
 #plan-control-tabla .pc-na{background:transparent;border-color:transparent!important}
+#resumen-ejec-tabla th{background:var(--navy);color:white;padding:8px 10px;text-align:left;font-size:11px}
+#resumen-ejec-tabla td{padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:top}
+#resumen-ejec-tabla tr:last-child td{border-bottom:none}
+#resumen-ejec-tabla tr:hover{background:var(--grayl)}
+#resumen-ejec-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+#resumen-ejec-tabla .re-falta div{margin-bottom:2px;white-space:normal}
 .pend-item{background:white;border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:.6rem .85rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
 .pend-item:hover{border-color:var(--accent)}
 .pend-item.pi-atrasado{border-left:3px solid var(--red)}

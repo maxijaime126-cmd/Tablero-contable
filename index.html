@@ -189,6 +189,20 @@
 
   <!-- PLANIFICACION -->
   <div id="panel-planificacion" class="panel">
+    <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Resumen ejecutivo — como venimos</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Estado de cada empresa con ejercicio abierto, de un vistazo</div>
+      </div>
+      <div class="row-gap">
+        <button class="btn-ghost btn-sm" onclick="openFiltroResumenModal()"><i class="ti ti-filter"></i> Filtrar empresas</button>
+        <button class="btn-primary btn-sm" onclick="generarResumenEjecutivoPDF()"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto;padding:0;margin-bottom:1.75rem">
+      <table id="resumen-ejec-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    </div>
+
     <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
       <div>
         <div style="font-size:15px;font-weight:700;color:var(--navy)">Carga de trabajo por empresa y tarea</div>
@@ -414,6 +428,23 @@
     <div class="modal-btns">
       <button onclick="closeNuevaTareaModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveNuevaTarea()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FILTRO RESUMEN EJECUTIVO -->
+<div class="modal-overlay" id="modal-filtro-resumen">
+  <div class="modal">
+    <h3>Filtrar empresas del resumen</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Solo se listan las que tienen un ejercicio abierto. Por defecto se muestran todas.</div>
+    <div class="row-gap" style="margin-bottom:.5rem">
+      <button class="btn-ghost btn-sm" onclick="marcarTodasFiltroResumen(true)">Marcar todas</button>
+      <button class="btn-ghost btn-sm" onclick="marcarTodasFiltroResumen(false)">Desmarcar todas</button>
+    </div>
+    <div class="cfg-box"><div id="filtro-resumen-list"></div></div>
+    <div class="modal-btns">
+      <button onclick="closeFiltroResumenModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveFiltroResumenModal()"><i class="ti ti-check"></i> Aplicar</button>
     </div>
   </div>
 </div>

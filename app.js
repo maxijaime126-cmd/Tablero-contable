@@ -421,22 +421,43 @@ function renderDashboard(){
 // ═══ CARGAR TRABAJO ═══
 function buildWorkEmpSel(){const s=document.getElementById('work-emp');s.innerHTML='';EMPRESAS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e;s.appendChild(o);});s.value=workEmpIdx;}
 
+let mostrarEjCerrados=false;
 function buildEjSelector(){
   const div=document.getElementById('ej-selector');div.innerHTML='';
   const ejs=ejsDeEmpresa(workEmpIdx);
   if(!ejs.length){div.innerHTML='<span style="font-size:12px;color:#A0AEC0">Sin ejercicios. <span style="color:var(--accent);cursor:pointer" onclick="showPanel(\'ejercicios\',document.querySelectorAll(\'.tab\')[2])">Agregar →</span></span>';return;}
-  ejs.forEach(ej=>{
+  const crearBtn=ej=>{
     const btn=document.createElement('button');
     btn.className='ej-sel-btn'+(ej.cerrado?' cerrado':'')+(workEjIdx===ej._idx?' active':'');
     btn.innerHTML=`${ej.cerrado?'🔒':'📂'} ${ej.numero}${ej.cerrado?' <span style="font-size:9px">(cerrado)</span>':''}`;
     btn.onclick=()=>{workEjIdx=ej._idx;verCierreForzado=false;buildEjSelector();renderTrabajoContent();};
-    div.appendChild(btn);
-  });
+    return btn;
+  };
+  const abiertos=ejs.filter(e=>!e.cerrado);
+  const cerrados=ejs.filter(e=>e.cerrado);
+  abiertos.forEach(ej=>div.appendChild(crearBtn(ej)));
+  if(cerrados.length){
+    if(mostrarEjCerrados){
+      cerrados.forEach(ej=>div.appendChild(crearBtn(ej)));
+      const ocultar=document.createElement('button');
+      ocultar.className='ej-sel-btn';ocultar.style.opacity='.6';
+      ocultar.textContent='ocultar cerrados';
+      ocultar.onclick=()=>{mostrarEjCerrados=false;buildEjSelector();};
+      div.appendChild(ocultar);
+    } else {
+      const toggle=document.createElement('button');
+      toggle.className='ej-sel-btn';toggle.style.opacity='.6';
+      toggle.textContent=`+ ${cerrados.length} cerrado${cerrados.length>1?'s':''}`;
+      toggle.title='Ver ejercicios cerrados de esta empresa';
+      toggle.onclick=()=>{mostrarEjCerrados=true;buildEjSelector();};
+      div.appendChild(toggle);
+    }
+  }
 }
 
 function openTrabajo(empIdx,mes,anio){
   workEmpIdx=empIdx;workMes=mes;workMesYear=anio||activeYear;
-  verCierreForzado=false;
+  verCierreForzado=false;mostrarEjCerrados=false;
   const ejActivo=ejActivoDeEmpresa(empIdx);
   workEjIdx=ejActivo?ejActivo._idx:null;
   showPanel('trabajo',document.querySelectorAll('.tab')[1]);
@@ -446,7 +467,7 @@ function openTrabajo(empIdx,mes,anio){
 
 function onChangeWorkEmp(){
   workEmpIdx=parseInt(document.getElementById('work-emp').value);
-  verCierreForzado=false;
+  verCierreForzado=false;mostrarEjCerrados=false;
   const ejActivo=ejActivoDeEmpresa(workEmpIdx);
   workEjIdx=ejActivo?ejActivo._idx:null;
   const ej=workEjIdx!==null?data.ejercicios[workEjIdx]:null;

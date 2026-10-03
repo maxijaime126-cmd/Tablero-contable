@@ -243,8 +243,10 @@ function getMargenAtraso(){
   return data.config.margenAtraso;
 }
 function mesLimiteAlDia(){
+  // margen=1 (default): el mes M se puede seguir trabajando durante TODO el mes siguiente (M+1)
+  // sin contar como atrasado; recien se marca atrasado si llega el mes M+2 y sigue sin estar Hecho.
   const margen=getMargenAtraso();
-  let mes=HOY.getMonth()-margen,anio=HOY.getFullYear();
+  let mes=HOY.getMonth()-(margen+1),anio=HOY.getFullYear();
   while(mes<0){mes+=12;anio--;}
   return{mes,anio};
 }
@@ -1165,7 +1167,9 @@ function filaResumenEjecutivo(ei){
   const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
   const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
   const estadoHtml=alDiaOk?'<span id="resumen-ejec-badge" style="background:#C6F6D5;color:#276749">🟢 Al dia</span>':`<span id="resumen-ejec-badge" style="background:#FED7D7;color:#742A2A">🟠 Atrasado (${alDia.pct}%)</span>`;
-  const faltaHtml=[...rutinariasTxt.map(t=>`<div>• ${t}</div>`),...cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)].join('')||'<span style="color:var(--green)">Sin pendientes</span>';
+  const detalleItems=[...rutinariasTxt.map(t=>`<div>• ${t}</div>`),...cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)];
+  const resumenCorto=[rutinariasTxt.length?`${rutinariasTxt.length} rutinaria(s)`:'',cierrePend.length?`${cierrePend.length} de cierre`:''].filter(Boolean).join(' · ');
+  const faltaHtml=detalleItems.length?`<details><summary style="cursor:pointer;color:var(--accent);font-weight:600;list-style:none">▸ ${resumenCorto}</summary><div style="margin-top:5px">${detalleItems.join('')}</div></details>`:'<span style="color:var(--green)">Sin pendientes</span>';
   const totalMins=estim.mins||0;
   return`<tr>
     <td class="pt-emp">${EMPRESAS[ei]}<div style="font-size:10px;color:var(--gray);font-weight:400">${ej.numero}</div></td>

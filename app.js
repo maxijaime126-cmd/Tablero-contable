@@ -1258,6 +1258,79 @@ function generarResumenEjecutivoPDF(){
   toast(`Resumen generado para ${incluidas.length} empresa(s)`);
 }
 
+// ═══ INFORME MENSUAL (foto de un mes puntual, para entregar a los socios) ═══
+function buildInformeSels(){
+  const sMes=document.getElementById('informe-mes-sel'),sAnio=document.getElementById('informe-anio-sel');
+  if(!sMes||sMes.options.length)return;
+  MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;sMes.appendChild(o);});
+  const anios=new Set(getYears());anios.add(ANO_ACTUAL);
+  [...anios].sort().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sAnio.appendChild(o);});
+  // por defecto, el mes recien cerrado (el anterior al actual)
+  let mesDef=MES_ACTUAL-1,anioDef=ANO_ACTUAL;
+  if(mesDef<0){mesDef=11;anioDef--;}
+  sMes.value=mesDef;sAnio.value=anioDef;
+}
+function generarInformeMensual(){
+  buildInformeSels();
+  const mes=parseInt(document.getElementById('informe-mes-sel').value);
+  const anio=parseInt(document.getElementById('informe-anio-sel').value);
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  let empresasConDatos=0,tiempoTotal=0,tareasHechas=0,tareasEsperadas=0;
+  const filas=EMPRESAS.map((emp,ei)=>{
+    const idxTareas=tareasDeEmpresa(ei);
+    if(!idxTareas.length)return null;
+    const mins=totalMinsEmpMesYr(ei,mes,anio);
+    let hechas=0,esperadas=0;const pendientes=[];
+    idxTareas.forEach(ti=>{
+      const est=getE(mes,ei,ti,anio);
+      if(est==='No Corresponde')return;
+      esperadas++;
+      if(est==='Hecho')hechas++;else pendientes.push(TAREAS[ti]+(est==='Esperando Cliente'?' (espera cliente)':''));
+    });
+    if(mins>0||hechas>0||pendientes.length)empresasConDatos++;
+    tiempoTotal+=mins;tareasHechas+=hechas;tareasEsperadas+=esperadas;
+    const pct=esperadas>0?Math.round(hechas/esperadas*100):0;
+    const estadoTxt=pct>=100?'✅ Completo':`⏳ Incompleto (${pct}%)`;
+    return`<tr>
+      <td><strong>${emp}</strong></td>
+      <td>${estadoTxt}</td>
+      <td style="text-align:right">${fmtMin(mins)}</td>
+      <td style="font-size:10px">${pendientes.length?pendientes.join(', '):'—'}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+  // alertas: ejercicios que cerraron en este mes/ano informado, y proximos vencimientos desde HOY
+  const cerraronEsteMes=data.ejercicios.filter(ej=>{
+    if(!ej.cierre)return false;
+    const d=parseDate(ej.cierre);
+    return d.getMonth()===mes&&d.getFullYear()===anio;
+  });
+  const ejVencenPronto=data.ejercicios.filter(ej=>!ej.cerrado&&diasRestantes(ej.cierre)!==null&&diasRestantes(ej.cierre)>=0&&diasRestantes(ej.cierre)<=60);
+  const perVencenPronto=data.periodicas.filter(p=>p.estado!=='Hecho'&&diasRestantes(p.vencimiento)!==null&&diasRestantes(p.vencimiento)<=60);
+  const alertasHtml=[
+    ...cerraronEsteMes.map(ej=>`<div>🔒 Cerro el ejercicio ${ej.numero} de <strong>${EMPRESAS[ej.emp]}</strong></div>`),
+    ...ejVencenPronto.map(ej=>`<div>📅 ${EMPRESAS[ej.emp]} — ejercicio ${ej.numero} vence en ${diasRestantes(ej.cierre)} dias</div>`),
+    ...perVencenPronto.map(p=>`<div>🗓 ${EMPRESAS[p.emp]} — ${p.nombre} vence en ${diasRestantes(p.vencimiento)} dias</div>`)
+  ].join('')||'<div style="color:#A0AEC0">Sin alertas para este periodo.</div>';
+  const pctGeneral=tareasEsperadas>0?Math.round(tareasHechas/tareasEsperadas*100):0;
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe mensual ${MESES[mes]} ${anio}</title>
+  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:12px;margin-bottom:20px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:19px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:15px">Informe mensual — ${MESES[mes]} ${anio}</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-lbl">Empresas con actividad</div><div class="kpi-v">${empresasConDatos}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tiempo total invertido</div><div class="kpi-v">${fmtMin(tiempoTotal)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tareas completadas</div><div class="kpi-v">${tareasHechas}/${tareasEsperadas}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Avance general</div><div class="kpi-v">${pctGeneral}%</div></div>
+  </div>
+  <div class="sec-title">Detalle por empresa</div>
+  <table><thead><tr><th>Empresa</th><th>Estado del mes</th><th style="text-align:right">Tiempo invertido</th><th>Pendientes</th></tr></thead><tbody>${filas}</tbody></table>
+  <div class="sec-title">Alertas y proximos vencimientos</div>
+  <div class="alertas">${alertasHtml}</div>
+  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable.</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast(`Informe de ${MESES[mes]} ${anio} generado`);
+}
+
 function buildPlanMesSel(){
   const s=document.getElementById('plan-mes-sel');if(!s)return;s.innerHTML='';
   MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});
@@ -1292,6 +1365,7 @@ function historicoEmpTarea(empIdx,tareaIdx){
 }
 function renderPlanificacion(){
   renderResumenEjecutivo();
+  buildInformeSels();
   const mesSel=document.getElementById('plan-mes-sel');
   const mes=parseInt(mesSel.value);
   document.getElementById('plan-mes-lbl').textContent=`${MESES[mes]} ${activeYear}`;

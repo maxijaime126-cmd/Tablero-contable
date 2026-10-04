@@ -205,6 +205,19 @@
 
     <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
       <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Informe mensual (para socios)</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">La foto de un mes puntual, lista para entregar — por defecto el mes recien cerrado</div>
+      </div>
+      <div class="row-gap">
+        <select class="sel" id="informe-mes-sel"></select>
+        <select class="sel" id="informe-anio-sel"></select>
+        <button class="btn-primary" onclick="generarInformeMensual()"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
+      </div>
+    </div>
+
+
+    <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
+      <div>
         <div style="font-size:15px;font-weight:700;color:var(--navy)">Carga de trabajo por empresa y tarea</div>
         <div style="font-size:12px;color:var(--gray);margin-top:2px">Cuanto tiempo lleva cada tarea, en cada empresa, mes a mes</div>
       </div>

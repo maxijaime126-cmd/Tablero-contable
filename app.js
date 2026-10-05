@@ -1296,11 +1296,10 @@ function generarInformeMensual(){
     const ej=ejActivoDeEmpresa(ei);
     let atrasadoTxt='—',tiempoAlDiaTxt='--';
     if(ej){
-      const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
-      const atrasoItems=[...rutinariasTxt,...cierrePend.map(n=>`[CIERRE] ${n}`)];
-      atrasadoTxt=atrasoItems.length?atrasoItems.join('<br>'):'Sin atraso';
+      const{rutinariasTxt}=detalleFaltante(ej);
+      atrasadoTxt=rutinariasTxt.length?rutinariasTxt.join('<br>'):'Sin atraso';
       const estim=estimacionAtrasada(ej);
-      tiempoAlDiaTxt=estim.mins?fmtMin(estim.mins)+(cierrePend.length?' <span style="color:#A0AEC0">(sin cierre)</span>':''):(estim.pendientes?'--':'--');
+      tiempoAlDiaTxt=estim.mins?fmtMin(estim.mins):'--';
     }
     return`<tr>
       <td><strong>${emp}</strong></td>
@@ -1329,7 +1328,7 @@ function generarInformeMensual(){
   <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:12px;margin-bottom:20px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:19px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
   <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:15px">Informe mensual — ${MESES[mes]} ${anio}</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
   <div class="kpis">
-    <div class="kpi"><div class="kpi-lbl">Empresas con actividad</div><div class="kpi-v">${empresasConDatos}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Empresas con actividad</div><div class="kpi-v">${empresasConDatos}/${EMPRESAS.length}</div></div>
     <div class="kpi"><div class="kpi-lbl">Tiempo total invertido</div><div class="kpi-v">${fmtMin(tiempoTotal)||'--'}</div></div>
     <div class="kpi"><div class="kpi-lbl">Tareas completadas</div><div class="kpi-v">${tareasHechas}/${tareasEsperadas}</div></div>
     <div class="kpi"><div class="kpi-lbl">Avance general</div><div class="kpi-v">${pctGeneral}%</div></div>

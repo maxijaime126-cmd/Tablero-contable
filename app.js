@@ -1274,6 +1274,7 @@ function generarInformeMensual(){
   buildInformeSels();
   const mes=parseInt(document.getElementById('informe-mes-sel').value);
   const anio=parseInt(document.getElementById('informe-anio-sel').value);
+  const notas=(document.getElementById('informe-notas').value||'').trim();
   const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
   let empresasConDatos=0,tiempoTotal=0,tareasHechas=0,tareasEsperadas=0;
   const filas=EMPRESAS.map((emp,ei)=>{
@@ -1291,11 +1292,23 @@ function generarInformeMensual(){
     tiempoTotal+=mins;tareasHechas+=hechas;tareasEsperadas+=esperadas;
     const pct=esperadas>0?Math.round(hechas/esperadas*100):0;
     const estadoTxt=pct>=100?'✅ Completo':`⏳ Incompleto (${pct}%)`;
+    // atraso acumulado hasta HOY (con el mes de cada tarea) y tiempo estimado para ponerse al dia
+    const ej=ejActivoDeEmpresa(ei);
+    let atrasadoTxt='—',tiempoAlDiaTxt='--';
+    if(ej){
+      const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
+      const atrasoItems=[...rutinariasTxt,...cierrePend.map(n=>`[CIERRE] ${n}`)];
+      atrasadoTxt=atrasoItems.length?atrasoItems.join('<br>'):'Sin atraso';
+      const estim=estimacionAtrasada(ej);
+      tiempoAlDiaTxt=estim.mins?fmtMin(estim.mins)+(cierrePend.length?' <span style="color:#A0AEC0">(sin cierre)</span>':''):(estim.pendientes?'--':'--');
+    }
     return`<tr>
       <td><strong>${emp}</strong></td>
       <td>${estadoTxt}</td>
       <td style="text-align:right">${fmtMin(mins)}</td>
       <td style="font-size:10px">${pendientes.length?pendientes.join(', '):'—'}</td>
+      <td style="font-size:10px">${atrasadoTxt}</td>
+      <td style="text-align:right;font-weight:700">${tiempoAlDiaTxt}</td>
     </tr>`;
   }).filter(Boolean).join('');
   // alertas: ejercicios que cerraron en este mes/ano informado, y proximos vencimientos desde HOY
@@ -1322,10 +1335,11 @@ function generarInformeMensual(){
     <div class="kpi"><div class="kpi-lbl">Avance general</div><div class="kpi-v">${pctGeneral}%</div></div>
   </div>
   <div class="sec-title">Detalle por empresa</div>
-  <table><thead><tr><th>Empresa</th><th>Estado del mes</th><th style="text-align:right">Tiempo invertido</th><th>Pendientes</th></tr></thead><tbody>${filas}</tbody></table>
+  <table><thead><tr><th>Empresa</th><th>Estado del mes</th><th style="text-align:right">Tiempo invertido</th><th>Pendientes del mes</th><th>Atraso acumulado (a hoy)</th><th style="text-align:right">Tiempo p/ ponerse al dia</th></tr></thead><tbody>${filas}</tbody></table>
   <div class="sec-title">Alertas y proximos vencimientos</div>
   <div class="alertas">${alertasHtml}</div>
-  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable.</div>
+  ${notas?`<div class="sec-title">Observaciones</div><div class="alertas" style="white-space:pre-line">${notas.replace(/</g,'&lt;')}</div>`:''}
+  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para ponerse al dia no incluye tareas de cierre de balance.</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
   toast(`Informe de ${MESES[mes]} ${anio} generado`);

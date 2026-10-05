@@ -1276,40 +1276,40 @@ function generarInformeMensual(){
   const anio=parseInt(document.getElementById('informe-anio-sel').value);
   const notas=(document.getElementById('informe-notas').value||'').trim();
   const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  let empresasConDatos=0,tiempoTotal=0,tareasHechas=0,tareasEsperadas=0;
-  const filas=EMPRESAS.map((emp,ei)=>{
+  let empresasConDatos=0,tiempoTotalMes=0,alDiaCount=0,atrasadoCount=0;
+  // mismo criterio que el Resumen Ejecutivo (Al dia / Atrasado), para no tener dos "estados" distintos en la misma app
+  const filasData=EMPRESAS.map((emp,ei)=>{
     const idxTareas=tareasDeEmpresa(ei);
     if(!idxTareas.length)return null;
     const mins=totalMinsEmpMesYr(ei,mes,anio);
-    let hechas=0,esperadas=0;const pendientes=[];
-    idxTareas.forEach(ti=>{
-      const est=getE(mes,ei,ti,anio);
-      if(est==='No Corresponde')return;
-      esperadas++;
-      if(est==='Hecho')hechas++;else pendientes.push(TAREAS[ti]+(est==='Esperando Cliente'?' (espera cliente)':''));
-    });
-    if(mins>0||hechas>0||pendientes.length)empresasConDatos++;
-    tiempoTotal+=mins;tareasHechas+=hechas;tareasEsperadas+=esperadas;
-    const pct=esperadas>0?Math.round(hechas/esperadas*100):0;
-    const estadoTxt=pct>=100?'✅ Completo':`⏳ Incompleto (${pct}%)`;
-    // atraso acumulado hasta HOY (con el mes de cada tarea) y tiempo estimado para ponerse al dia
+    if(mins>0)empresasConDatos++;
+    tiempoTotalMes+=mins;
     const ej=ejActivoDeEmpresa(ei);
-    let atrasadoTxt='—',tiempoAlDiaTxt='--';
-    if(ej){
-      const{rutinariasTxt}=detalleFaltante(ej);
-      atrasadoTxt=rutinariasTxt.length?rutinariasTxt.join('<br>'):'Sin atraso';
-      const estim=estimacionAtrasada(ej);
-      tiempoAlDiaTxt=estim.mins?fmtMin(estim.mins):'--';
+    if(!ej)return{emp,mins,sinEjercicio:true,orden:2};
+    const alDia=avanceHastaHoy(ej);
+    const avanceEj=avanceEjercicioCompleto(ej);
+    const estim=estimacionAtrasada(ej);
+    const{rutinariasTxt}=detalleFaltante(ej);
+    const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
+    if(alDiaOk)alDiaCount++;else atrasadoCount++;
+    return{emp,mins,sinEjercicio:false,alDiaOk,avanceEj,atrasoItems:rutinariasTxt,tiempoAlDia:estim.mins,orden:alDiaOk?1:0};
+  }).filter(Boolean);
+  // ordenado por atencion: atrasadas primero, despues al dia, las sin ejercicio al final
+  filasData.sort((a,b)=>a.orden-b.orden);
+  const filas=filasData.map(f=>{
+    if(f.sinEjercicio){
+      return`<tr><td><strong>${f.emp}</strong></td><td style="color:#A0AEC0">Sin ejercicio abierto</td><td style="text-align:right">${fmtMin(f.mins)}</td><td>—</td><td style="text-align:right">--</td></tr>`;
     }
+    const estadoTxt=f.alDiaOk?'🟢 Al dia':'🟠 Atrasado';
+    const atrasoHtml=f.atrasoItems.length?f.atrasoItems.map(t=>`• ${t}`).join('<br>'):'Sin atraso';
     return`<tr>
-      <td><strong>${emp}</strong></td>
-      <td>${estadoTxt}</td>
-      <td style="text-align:right">${fmtMin(mins)}</td>
-      <td style="font-size:10px">${pendientes.length?pendientes.join(', '):'—'}</td>
-      <td style="font-size:10px">${atrasadoTxt}</td>
-      <td style="text-align:right;font-weight:700">${tiempoAlDiaTxt}</td>
+      <td><strong>${f.emp}</strong></td>
+      <td>${estadoTxt}<div style="font-size:9px;color:#718096">${f.avanceEj.hechas}/${f.avanceEj.esperadas} del ejercicio (${f.avanceEj.pct}%)</div></td>
+      <td style="text-align:right">${fmtMin(f.mins)}</td>
+      <td style="font-size:10px">${atrasoHtml}</td>
+      <td style="text-align:right;font-weight:700">${f.tiempoAlDia?fmtMin(f.tiempoAlDia):'--'}</td>
     </tr>`;
-  }).filter(Boolean).join('');
+  }).join('');
   // alertas: ejercicios que cerraron en este mes/ano informado, y proximos vencimientos desde HOY
   const cerraronEsteMes=data.ejercicios.filter(ej=>{
     if(!ej.cierre)return false;
@@ -1323,21 +1323,21 @@ function generarInformeMensual(){
     ...ejVencenPronto.map(ej=>`<div>📅 ${EMPRESAS[ej.emp]} — ejercicio ${ej.numero} vence en ${diasRestantes(ej.cierre)} dias</div>`),
     ...perVencenPronto.map(p=>`<div>🗓 ${EMPRESAS[p.emp]} — ${p.nombre} vence en ${diasRestantes(p.vencimiento)} dias</div>`)
   ].join('')||'<div style="color:#A0AEC0">Sin alertas para este periodo.</div>';
-  const pctGeneral=tareasEsperadas>0?Math.round(tareasHechas/tareasEsperadas*100):0;
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe mensual ${MESES[mes]} ${anio}</title>
-  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:12px;margin-bottom:20px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:19px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
+  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:12px;margin-bottom:20px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:19px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.firma{margin-top:40px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:6px;font-size:10px;color:#718096;text-align:center}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
   <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:15px">Informe mensual — ${MESES[mes]} ${anio}</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
   <div class="kpis">
     <div class="kpi"><div class="kpi-lbl">Empresas con actividad</div><div class="kpi-v">${empresasConDatos}/${EMPRESAS.length}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Tiempo total invertido</div><div class="kpi-v">${fmtMin(tiempoTotal)||'--'}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Tareas completadas</div><div class="kpi-v">${tareasHechas}/${tareasEsperadas}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Avance general</div><div class="kpi-v">${pctGeneral}%</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tiempo invertido en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(tiempoTotalMes)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Empresas al dia</div><div class="kpi-v" style="color:#276749">${alDiaCount}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Empresas atrasadas</div><div class="kpi-v" style="color:#742A2A">${atrasadoCount}</div></div>
   </div>
-  <div class="sec-title">Detalle por empresa</div>
-  <table><thead><tr><th>Empresa</th><th>Estado del mes</th><th style="text-align:right">Tiempo invertido</th><th>Pendientes del mes</th><th>Atraso acumulado (a hoy)</th><th style="text-align:right">Tiempo p/ ponerse al dia</th></tr></thead><tbody>${filas}</tbody></table>
+  <div class="sec-title">Detalle por empresa (ordenado por las que necesitan mas atencion)</div>
+  <table><thead><tr><th>Empresa</th><th>Estado</th><th style="text-align:right">Tiempo en ${MESES[mes]}</th><th>Atraso acumulado (a hoy)</th><th style="text-align:right">Tiempo p/ ponerse al dia</th></tr></thead><tbody>${filas}</tbody></table>
   <div class="sec-title">Alertas y proximos vencimientos</div>
   <div class="alertas">${alertasHtml}</div>
   ${notas?`<div class="sec-title">Observaciones</div><div class="alertas" style="white-space:pre-line">${notas.replace(/</g,'&lt;')}</div>`:''}
+  <div class="firma"><div>Preparado por</div><div>Fecha</div></div>
   <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para ponerse al dia no incluye tareas de cierre de balance.</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);

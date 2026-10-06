@@ -1276,40 +1276,68 @@ function generarInformeMensual(){
   const anio=parseInt(document.getElementById('informe-anio-sel').value);
   const notas=(document.getElementById('informe-notas').value||'').trim();
   const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  let empresasConDatos=0,tiempoTotalMes=0,alDiaCount=0,atrasadoCount=0;
-  // mismo criterio que el Resumen Ejecutivo (Al dia / Atrasado), para no tener dos "estados" distintos en la misma app
+
+  // horas reales trabajadas EN ese mes (segun fecha de carga), sin importar de que periodo/ejercicio era la tarea
+  const regsMes=tiemposPorFechaReal(mes,anio);
+  const minsRutPorEmp={},minsCiePorEmp={};
+  regsMes.forEach(r=>{
+    if(r.tipo==='rutinaria')minsRutPorEmp[r.emp]=(minsRutPorEmp[r.emp]||0)+r.mins;
+    else if(r.tipo==='cierre')minsCiePorEmp[r.emp]=(minsCiePorEmp[r.emp]||0)+r.mins;
+  });
+  const totalRutMes=Object.values(minsRutPorEmp).reduce((a,m)=>a+m,0);
+  const totalCieMes=Object.values(minsCiePorEmp).reduce((a,m)=>a+m,0);
+
+  // estado y backlog de cada empresa de la cartera completa (siempre las 9, sin excepcion)
+  let countAlDia=0,countProceso=0,countAtrasado=0,countSinActividad=0,tiempoTotalRegularizar=0;
   const filasData=EMPRESAS.map((emp,ei)=>{
-    const idxTareas=tareasDeEmpresa(ei);
-    if(!idxTareas.length)return null;
-    const mins=totalMinsEmpMesYr(ei,mes,anio);
-    if(mins>0)empresasConDatos++;
-    tiempoTotalMes+=mins;
     const ej=ejActivoDeEmpresa(ei);
-    if(!ej)return{emp,mins,sinEjercicio:true,orden:2};
+    const minsRutMes=minsRutPorEmp[ei]||0;
+    const minsCieMes=minsCiePorEmp[ei]||0;
+    if(!ej){
+      countSinActividad++;
+      return{emp,ei,estado:'sinActividad',minsRutMes,minsCieMes,atrasoItems:[],tiempoAlDia:0,avanceEj:null};
+    }
+    const totalEjMins=totalMinsEjercicio(ej);
     const alDia=avanceHastaHoy(ej);
     const avanceEj=avanceEjercicioCompleto(ej);
     const estim=estimacionAtrasada(ej);
     const{rutinariasTxt}=detalleFaltante(ej);
     const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
-    if(alDiaOk)alDiaCount++;else atrasadoCount++;
-    return{emp,mins,sinEjercicio:false,alDiaOk,avanceEj,atrasoItems:rutinariasTxt,tiempoAlDia:estim.mins,orden:alDiaOk?1:0};
-  }).filter(Boolean);
-  // ordenado por atencion: atrasadas primero, despues al dia, las sin ejercicio al final
-  filasData.sort((a,b)=>a.orden-b.orden);
-  const filas=filasData.map(f=>{
-    if(f.sinEjercicio){
-      return`<tr><td><strong>${f.emp}</strong></td><td style="color:#A0AEC0">Sin ejercicio abierto</td><td style="text-align:right">${fmtMin(f.mins)}</td><td>—</td><td style="text-align:right">--</td></tr>`;
-    }
-    const estadoTxt=f.alDiaOk?'🟢 Al dia':'🟠 Atrasado';
-    const atrasoHtml=f.atrasoItems.length?f.atrasoItems.map(t=>`• ${t}`).join('<br>'):'Sin atraso';
+    let estado;
+    if(totalEjMins===0&&minsRutMes===0&&minsCieMes===0){estado='sinActividad';countSinActividad++;}
+    else if(!alDiaOk){estado='atrasado';countAtrasado++;tiempoTotalRegularizar+=estim.mins||0;}
+    else if(rutinariasTxt.length>0){estado='proceso';countProceso++;tiempoTotalRegularizar+=estim.mins||0;}
+    else{estado='alDia';countAlDia++;}
+    return{emp,ei,estado,minsRutMes,minsCieMes,atrasoItems:rutinariasTxt,tiempoAlDia:estim.mins,avanceEj};
+  });
+  // orden por atencion: atrasado > en proceso > al dia > sin actividad
+  const ordenEstado={atrasado:0,proceso:1,alDia:2,sinActividad:3};
+  filasData.sort((a,b)=>ordenEstado[a.estado]-ordenEstado[b.estado]);
+
+  const badgeEstado={
+    atrasado:'🟠 Atrasado',
+    proceso:'🟡 En Proceso / Con Pendientes',
+    alDia:'🟢 Al dia',
+    sinActividad:'⚪ Sin actividad en el periodo'
+  };
+
+  // TABLA 1: tareas rutinarias mensuales (siempre las 9 empresas)
+  const filasTabla1=filasData.map(f=>{
+    const atrasoHtml=f.atrasoItems.length?f.atrasoItems.map(t=>`• ${t}`).join('<br>'):(f.estado==='sinActividad'?'—':'Sin atraso');
+    const avanceSub=f.avanceEj?`<div style="font-size:9px;color:#718096">${f.avanceEj.hechas}/${f.avanceEj.esperadas} del ejercicio (${f.avanceEj.pct}%)</div>`:'';
     return`<tr>
       <td><strong>${f.emp}</strong></td>
-      <td>${estadoTxt}<div style="font-size:9px;color:#718096">${f.avanceEj.hechas}/${f.avanceEj.esperadas} del ejercicio (${f.avanceEj.pct}%)</div></td>
-      <td style="text-align:right">${fmtMin(f.mins)}</td>
+      <td>${badgeEstado[f.estado]}${avanceSub}</td>
+      <td style="text-align:right">${f.minsRutMes?fmtMin(f.minsRutMes):'--'}</td>
       <td style="font-size:10px">${atrasoHtml}</td>
       <td style="text-align:right;font-weight:700">${f.tiempoAlDia?fmtMin(f.tiempoAlDia):'--'}</td>
     </tr>`;
   }).join('');
+
+  // TABLA 2: tareas de cierre de balance del mes (solo empresas con horas de cierre cargadas este mes)
+  const conCierre=filasData.filter(f=>f.minsCieMes>0);
+  const filasTabla2=conCierre.length?conCierre.map(f=>`<tr><td><strong>${f.emp}</strong></td><td style="text-align:right;font-weight:700">${fmtMin(f.minsCieMes)}</td></tr>`).join(''):'<tr><td colspan="2" style="color:#A0AEC0">Sin horas de cierre cargadas este mes.</td></tr>';
+
   // alertas: ejercicios que cerraron en este mes/ano informado, y proximos vencimientos desde HOY
   const cerraronEsteMes=data.ejercicios.filter(ej=>{
     if(!ej.cierre)return false;
@@ -1323,22 +1351,46 @@ function generarInformeMensual(){
     ...ejVencenPronto.map(ej=>`<div>📅 ${EMPRESAS[ej.emp]} — ejercicio ${ej.numero} vence en ${diasRestantes(ej.cierre)} dias</div>`),
     ...perVencenPronto.map(p=>`<div>🗓 ${EMPRESAS[p.emp]} — ${p.nombre} vence en ${diasRestantes(p.vencimiento)} dias</div>`)
   ].join('')||'<div style="color:#A0AEC0">Sin alertas para este periodo.</div>';
+
+  // plan de accion: detalle de empresas con tiempo pendiente para regularizar
+  const planAccionItems=filasData.filter(f=>f.tiempoAlDia>0).map(f=>`<div>${f.emp}: <strong>${fmtMin(f.tiempoAlDia)}</strong></div>`);
+  const planAccionHtml=planAccionItems.length?planAccionItems.join(''):'<div style="color:#A0AEC0">Sin regularizaciones pendientes.</div>';
+
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe mensual ${MESES[mes]} ${anio}</title>
-  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:12px;margin-bottom:20px}.kpi{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:19px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.firma{margin-top:40px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:6px;font-size:10px;color:#718096;text-align:center}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
+  <style>body{font-family:Arial,sans-serif;color:#1a202c;margin:0;padding:28px;font-size:12px}.logo{font-size:22px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}.kpis{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}.kpi{flex:1;min-width:110px;border:1px solid #E2E8F0;border-radius:8px;padding:10px 12px;text-align:center}.kpi-lbl{font-size:9px;text-transform:uppercase;color:#718096;font-weight:700;letter-spacing:.05em}.kpi-v{font-size:17px;font-weight:700;color:#1B2A4A;margin-top:2px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1B2A4A;color:white;padding:7px 8px;text-align:left;font-size:11px}td{padding:7px 8px;border-bottom:1px solid #E2E8F0;vertical-align:top}.sec-title{font-size:12px;font-weight:700;color:#1B2A4A;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4299E1;padding-left:8px}.alertas{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:11px}.alertas div{margin-bottom:4px}.firma{margin-top:40px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:6px;font-size:10px;color:#718096;text-align:center}.footer{margin-top:22px;font-size:10px;color:#A0AEC0;text-align:center}@media print{body{padding:12px}}</style></head><body>
   <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:10px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:15px">Informe mensual — ${MESES[mes]} ${anio}</div><div style="font-size:11px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  <div class="sec-title">Resumen ejecutivo</div>
   <div class="kpis">
-    <div class="kpi"><div class="kpi-lbl">Empresas con actividad</div><div class="kpi-v">${empresasConDatos}/${EMPRESAS.length}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Tiempo invertido en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(tiempoTotalMes)||'--'}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Empresas al dia</div><div class="kpi-v" style="color:#276749">${alDiaCount}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Empresas atrasadas</div><div class="kpi-v" style="color:#742A2A">${atrasadoCount}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total cartera</div><div class="kpi-v">${EMPRESAS.length}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Al dia</div><div class="kpi-v" style="color:#276749">${countAlDia}</div></div>
+    <div class="kpi"><div class="kpi-lbl">En proceso</div><div class="kpi-v" style="color:#B7791F">${countProceso}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Atrasadas</div><div class="kpi-v" style="color:#742A2A">${countAtrasado}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Sin actividad</div><div class="kpi-v" style="color:#718096">${countSinActividad}</div></div>
   </div>
-  <div class="sec-title">Detalle por empresa (ordenado por las que necesitan mas atencion)</div>
-  <table><thead><tr><th>Empresa</th><th>Estado</th><th style="text-align:right">Tiempo en ${MESES[mes]}</th><th>Atraso acumulado (a hoy)</th><th style="text-align:right">Tiempo p/ ponerse al dia</th></tr></thead><tbody>${filas}</tbody></table>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-lbl">Horas rutinarias en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(totalRutMes)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Horas de cierre en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(totalCieMes)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total horas ejecutadas</div><div class="kpi-v" style="color:#2B6CB0">${fmtMin(totalRutMes+totalCieMes)||'--'}</div></div>
+  </div>
+  <div style="font-size:10px;color:#A0AEC0;margin:-10px 0 16px">Las horas de este resumen son las realmente ejecutadas durante ${MESES[mes]} (segun la fecha en que se cargaron), sin importar de que mes o ejercicio era la tarea.</div>
+
+  <div class="sec-title">Tabla 1 — Tareas rutinarias mensuales (cartera completa)</div>
+  <table><thead><tr><th>Empresa</th><th>Estado</th><th style="text-align:right">Minutos en ${MESES[mes]}</th><th>Atraso acumulado (backlog, a hoy)</th><th style="text-align:right">Tiempo p/ regularizar</th></tr></thead><tbody>${filasTabla1}</tbody></table>
+
+  <div class="sec-title">Tabla 2 — Tareas de cierre de balance / especiales del mes</div>
+  <table><thead><tr><th>Empresa</th><th style="text-align:right">Horas de cierre en ${MESES[mes]}</th></tr></thead><tbody>${filasTabla2}</tbody></table>
+
+  <div class="sec-title">Plan de accion / regularizacion</div>
+  <div class="alertas">
+    <div style="font-weight:700;margin-bottom:6px">Tiempo total estimado para poner al dia toda la cartera: ${tiempoTotalRegularizar?fmtMin(tiempoTotalRegularizar):'--'}</div>
+    ${planAccionHtml}
+  </div>
+
   <div class="sec-title">Alertas y proximos vencimientos</div>
   <div class="alertas">${alertasHtml}</div>
   ${notas?`<div class="sec-title">Observaciones</div><div class="alertas" style="white-space:pre-line">${notas.replace(/</g,'&lt;')}</div>`:''}
   <div class="firma"><div>Preparado por</div><div>Fecha</div></div>
-  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para ponerse al dia no incluye tareas de cierre de balance.</div>
+  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para regularizar no incluye tareas de cierre de balance (se calculan por separado en la Tabla 2).</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
   toast(`Informe de ${MESES[mes]} ${anio} generado`);

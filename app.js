@@ -1180,24 +1180,49 @@ function estimacionAtrasada(ej){
   });
   return{pendientes,mins,sinDatos};
 }
-function filaResumenEjecutivo(ei){
+// clasificacion unica de estado de una empresa, usada tanto en Resumen Ejecutivo como en el Informe Mensual
+// para que las dos vistas digan siempre lo mismo. 4 niveles:
+//  - sinActividad: el ejercicio no tiene ni un minuto cargado todavia (no es "atraso", es que no arranco)
+//  - atrasado: supero el margen de gracia configurado (de verdad atrasado)
+//  - proceso: tiene pendientes pero todavia dentro del margen normal (no es atraso, es trabajo en curso)
+//  - alDia: cero pendientes
+function clasificarEstadoEmpresa(ei){
   const ej=ejActivoDeEmpresa(ei);
-  const alDia=avanceHastaHoy(ej);
+  if(!ej)return{estado:'sinActividad',ej:null,avanceEj:null,atrasoItems:[],cierrePend:[],tiempoAlDia:0};
+  const totalEjMins=totalMinsEjercicio(ej);
   const avanceEj=avanceEjercicioCompleto(ej);
   const estim=estimacionAtrasada(ej);
   const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
+  if(totalEjMins===0)return{estado:'sinActividad',ej,avanceEj,atrasoItems:[],cierrePend,tiempoAlDia:0};
+  const alDia=avanceHastaHoy(ej);
   const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
-  const estadoHtml=alDiaOk?'<span id="resumen-ejec-badge" style="background:#C6F6D5;color:#276749">🟢 Al dia</span>':`<span id="resumen-ejec-badge" style="background:#FED7D7;color:#742A2A">🟠 Atrasado (${alDia.pct}%)</span>`;
-  const detalleItems=[...rutinariasTxt.map(t=>`<div>• ${t}</div>`),...cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)];
-  const resumenCorto=[rutinariasTxt.length?`${rutinariasTxt.length} rutinaria(s)`:'',cierrePend.length?`${cierrePend.length} de cierre`:''].filter(Boolean).join(' · ');
+  let estado;
+  if(!alDiaOk)estado='atrasado';
+  else if(rutinariasTxt.length>0)estado='proceso';
+  else estado='alDia';
+  return{estado,ej,avanceEj,atrasoItems:rutinariasTxt,cierrePend,tiempoAlDia:estim.mins,alDiaPct:alDia?alDia.pct:null};
+}
+const BADGE_ESTADO={
+  atrasado:{html:(pct)=>`<span style="background:#FED7D7;color:#742A2A">🟠 Atrasado${pct!==null?' ('+pct+'%)':''}</span>`,txt:(pct)=>`🟠 Atrasado${pct!==null?' ('+pct+'%)':''}`},
+  proceso:{html:()=>'<span style="background:#FEEBC8;color:#7B341E">🟡 En proceso / Con pendientes</span>',txt:()=>'🟡 En proceso / Con pendientes'},
+  alDia:{html:()=>'<span style="background:#C6F6D5;color:#276749">🟢 Al dia</span>',txt:()=>'🟢 Al dia'},
+  sinActividad:{html:()=>'<span style="background:#E2E8F0;color:#718096">⚪ Sin actividad en el periodo</span>',txt:()=>'⚪ Sin actividad en el periodo'}
+};
+function filaResumenEjecutivo(ei){
+  const c=clasificarEstadoEmpresa(ei);
+  const ej=c.ej;
+  const estadoHtml=`<span id="resumen-ejec-badge">${BADGE_ESTADO[c.estado].html(c.alDiaPct!==undefined?c.alDiaPct:null)}</span>`;
+  const detalleItems=[...c.atrasoItems.map(t=>`<div>• ${t}</div>`),...c.cierrePend.map(n=>`<div style="color:var(--purple)">• [CIERRE] ${n}</div>`)];
+  const resumenCorto=[c.atrasoItems.length?`${c.atrasoItems.length} rutinaria(s)`:'',c.cierrePend.length?`${c.cierrePend.length} de cierre`:''].filter(Boolean).join(' · ');
   const faltaHtml=detalleItems.length?`<details><summary style="cursor:pointer;color:var(--accent);font-weight:600;list-style:none">▸ ${resumenCorto}</summary><div style="margin-top:5px">${detalleItems.join('')}</div></details>`:'<span style="color:var(--green)">Sin pendientes</span>';
-  const totalMins=estim.mins||0;
+  const totalMins=c.tiempoAlDia||0;
+  const avanceTxt=c.avanceEj?`${c.avanceEj.hechas}/${c.avanceEj.esperadas} <span style="color:var(--gray)">(${c.avanceEj.pct}%)</span>`:'--';
   return`<tr>
-    <td class="pt-emp">${EMPRESAS[ei]}<div style="font-size:10px;color:var(--gray);font-weight:400">${ej.numero}</div></td>
+    <td class="pt-emp">${EMPRESAS[ei]}${ej?`<div style="font-size:10px;color:var(--gray);font-weight:400">${ej.numero}</div>`:''}</td>
     <td>${estadoHtml}</td>
-    <td style="white-space:nowrap">${avanceEj.hechas}/${avanceEj.esperadas} <span style="color:var(--gray)">(${avanceEj.pct}%)</span></td>
+    <td style="white-space:nowrap">${avanceTxt}</td>
     <td class="re-falta">${faltaHtml}</td>
-    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}${cierrePend.length?'<div style="font-size:9px;font-weight:400;color:var(--gray)">(no incluye cierre)</div>':''}</td>
+    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}${c.cierrePend.length?'<div style="font-size:9px;font-weight:400;color:var(--gray)">(no incluye cierre)</div>':''}</td>
   </tr>`;
 }
 function renderResumenEjecutivo(){
@@ -1231,21 +1256,18 @@ function generarResumenEjecutivoPDF(){
   if(!incluidas.length){toast('No hay empresas con ejercicio abierto para incluir',true);return;}
   const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
   const filas=incluidas.map(ei=>{
-    const ej=ejActivoDeEmpresa(ei);
-    const alDia=avanceHastaHoy(ej);
-    const avanceEj=avanceEjercicioCompleto(ej);
-    const estim=estimacionAtrasada(ej);
-    const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
-    const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
-    const estadoTxt=alDiaOk?'🟢 Al dia':`🟠 Atrasado (${alDia.pct}%)`;
-    const falta=[...rutinariasTxt,...cierrePend.map(n=>`[CIERRE] ${n}`)].join('<br>')||'Sin pendientes';
-    const totalMins=estim.mins||0;
+    const c=clasificarEstadoEmpresa(ei);
+    const ej=c.ej;
+    const estadoTxt=BADGE_ESTADO[c.estado].txt(c.alDiaPct!==undefined?c.alDiaPct:null);
+    const falta=[...c.atrasoItems,...c.cierrePend.map(n=>`[CIERRE] ${n}`)].join('<br>')||'Sin pendientes';
+    const totalMins=c.tiempoAlDia||0;
+    const avanceTxt=c.avanceEj?`${c.avanceEj.hechas}/${c.avanceEj.esperadas}<br>(${c.avanceEj.pct}%)`:'--';
     return`<tr>
-      <td><strong>${EMPRESAS[ei]}</strong><br><span style="font-size:10px;color:#718096">${ej.numero} · ${fmtDate(ej.inicio)} - ${fmtDate(ej.cierre)}</span></td>
+      <td><strong>${EMPRESAS[ei]}</strong><br><span style="font-size:10px;color:#718096">${ej?ej.numero+' · '+fmtDate(ej.inicio)+' - '+fmtDate(ej.cierre):'Sin ejercicio'}</span></td>
       <td>${estadoTxt}</td>
-      <td style="text-align:center">${avanceEj.hechas}/${avanceEj.esperadas}<br>(${avanceEj.pct}%)</td>
+      <td style="text-align:center">${avanceTxt}</td>
       <td style="font-size:10px">${falta}</td>
-      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}${cierrePend.length?'<br><span style="font-size:9px;font-weight:400;color:#A0AEC0">(no incluye cierre)</span>':''}</td>
+      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}${c.cierrePend.length?'<br><span style="font-size:9px;font-weight:400;color:#A0AEC0">(no incluye cierre)</span>':''}</td>
     </tr>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Resumen ejecutivo</title>
@@ -1288,27 +1310,17 @@ function generarInformeMensual(){
   const totalCieMes=Object.values(minsCiePorEmp).reduce((a,m)=>a+m,0);
 
   // estado y backlog de cada empresa de la cartera completa (siempre las 9, sin excepcion)
+  // usa el mismo clasificador que el Resumen Ejecutivo, para que los dos informes digan siempre lo mismo
   let countAlDia=0,countProceso=0,countAtrasado=0,countSinActividad=0,tiempoTotalRegularizar=0;
   const filasData=EMPRESAS.map((emp,ei)=>{
-    const ej=ejActivoDeEmpresa(ei);
     const minsRutMes=minsRutPorEmp[ei]||0;
     const minsCieMes=minsCiePorEmp[ei]||0;
-    if(!ej){
-      countSinActividad++;
-      return{emp,ei,estado:'sinActividad',minsRutMes,minsCieMes,atrasoItems:[],tiempoAlDia:0,avanceEj:null};
-    }
-    const totalEjMins=totalMinsEjercicio(ej);
-    const alDia=avanceHastaHoy(ej);
-    const avanceEj=avanceEjercicioCompleto(ej);
-    const estim=estimacionAtrasada(ej);
-    const{rutinariasTxt}=detalleFaltante(ej);
-    const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
-    let estado;
-    if(totalEjMins===0&&minsRutMes===0&&minsCieMes===0){estado='sinActividad';countSinActividad++;}
-    else if(!alDiaOk){estado='atrasado';countAtrasado++;tiempoTotalRegularizar+=estim.mins||0;}
-    else if(rutinariasTxt.length>0){estado='proceso';countProceso++;tiempoTotalRegularizar+=estim.mins||0;}
-    else{estado='alDia';countAlDia++;}
-    return{emp,ei,estado,minsRutMes,minsCieMes,atrasoItems:rutinariasTxt,tiempoAlDia:estim.mins,avanceEj};
+    const c=clasificarEstadoEmpresa(ei);
+    if(c.estado==='sinActividad')countSinActividad++;
+    else if(c.estado==='atrasado'){countAtrasado++;tiempoTotalRegularizar+=c.tiempoAlDia||0;}
+    else if(c.estado==='proceso'){countProceso++;tiempoTotalRegularizar+=c.tiempoAlDia||0;}
+    else countAlDia++;
+    return{emp,ei,estado:c.estado,minsRutMes,minsCieMes,atrasoItems:c.atrasoItems,tiempoAlDia:c.tiempoAlDia,avanceEj:c.avanceEj};
   });
   // orden por atencion: atrasado > en proceso > al dia > sin actividad
   const ordenEstado={atrasado:0,proceso:1,alDia:2,sinActividad:3};

@@ -1145,23 +1145,24 @@ function detalleFaltante(ej){
   const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
   const porTarea={};
   idxTareas.forEach(ti=>{
+    const vencidos=[],enPlazo=[];
     mesesEj.forEach(({mes,anio})=>{
       const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
-      if(!esExigible)return; // todavia no llega ese mes, no cuenta como falta
       const est=getE(mes,ej.emp,ti,anio);
-      if(est==='Hecho'||est==='No Corresponde')return; // blanco/Pendiente/Esperando Cliente cuentan como falta
-      const nombre=TAREAS[ti];
-      if(!porTarea[nombre])porTarea[nombre]=[];
-      porTarea[nombre].push(MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':''));
+      if(est==='Hecho'||est==='No Corresponde')return;
+      const lbl=MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':'');
+      if(esExigible)vencidos.push(lbl); // vencido: blanco, Pendiente o Esperando Cliente
+      else if(est==='Pendiente'||est==='Esperando Cliente')enPlazo.push(lbl); // dentro del plazo: solo si lo marcaron pendiente a proposito
     });
+    if(vencidos.length||enPlazo.length)porTarea[TAREAS[ti]]={vencidos,enPlazo};
   });
-  const rutinariasTxt=Object.entries(porTarea).map(([n,meses])=>`${n}: ${meses.join(', ')}`);
+  const rutinariasTxt=Object.entries(porTarea).map(([n,{vencidos,enPlazo}])=>`${n}: ${[vencidos.join(', '),enPlazo.length?enPlazo.join(', ')+' (en plazo)':''].filter(Boolean).join(' · ')}`);
   const idxReal=ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej);
   // el cierre de balance NUNCA cuenta como "atrasado" (se hace al final del ejercicio), solo se informa aparte
   const cierrePend=(ej.tareascierre||[]).filter((tc,ci)=>{const est=getCierreE(idxReal,ci);return est!=='Hecho'&&est!=='No Corresponde';}).map(tc=>tc.nombre);
   return{rutinariasTxt,cierrePend};
 }
-// tiempo estimado de SOLO lo atrasado hasta hoy (no cuenta meses futuros del ejercicio, ni el cierre de balance)
+// tiempo estimado de lo vencido + lo marcado pendiente aunque este dentro del plazo (no cuenta meses futuros sin marcar, ni el cierre de balance)
 function estimacionAtrasada(ej){
   const meses=getMesesEj(ej)||[];
   const idxTareas=tareasDeEmpresa(ej.emp);
@@ -1171,9 +1172,9 @@ function estimacionAtrasada(ej){
     const prom=historicoEmpTarea(ej.emp,ti);
     meses.forEach(({mes,anio})=>{
       const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
-      if(!esExigible)return;
       const est=getE(mes,ej.emp,ti,anio);
       if(est==='Hecho'||est==='No Corresponde')return;
+      if(!esExigible&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // dentro del plazo solo cuenta si lo marcaron pendiente
       pendientes++;
       if(prom!==null)mins+=prom;else sinDatos++;
     });

@@ -1138,7 +1138,7 @@ function empresasConEjercicioAbierto(){
   return EMPRESAS.map((_,i)=>i).filter(i=>{const ej=ejActivoDeEmpresa(i);return ej&&!ej.cerrado;});
 }
 // agrupa, para un ejercicio, que tareas quedaron Pendiente/Esperando Cliente, con el detalle de en que mes
-function detalleFaltante(ej){
+function detalleFaltante(ej,soloMarcados=false){
   const mesesEj=getMesesEj(ej)||[];
   const idxTareas=tareasDeEmpresa(ej.emp);
   const anioBase=mesesEj.length?mesesEj[0].anio:null;
@@ -1150,6 +1150,7 @@ function detalleFaltante(ej){
       const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
       const est=getE(mes,ej.emp,ti,anio);
       if(est==='Hecho'||est==='No Corresponde')return;
+      if(soloMarcados&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // sin actividad: solo lo que marcaron a proposito, no los blancos
       const lbl=MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':'');
       if(esExigible)vencidos.push(lbl); // vencido: blanco, Pendiente o Esperando Cliente
       else if(est==='Pendiente'||est==='Esperando Cliente')enPlazo.push(lbl); // dentro del plazo: solo si lo marcaron pendiente a proposito
@@ -1163,7 +1164,7 @@ function detalleFaltante(ej){
   return{rutinariasTxt,cierrePend};
 }
 // tiempo estimado de lo vencido + lo marcado pendiente aunque este dentro del plazo (no cuenta meses futuros sin marcar, ni el cierre de balance)
-function estimacionAtrasada(ej){
+function estimacionAtrasada(ej,soloMarcados=false){
   const meses=getMesesEj(ej)||[];
   const idxTareas=tareasDeEmpresa(ej.emp);
   const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
@@ -1174,6 +1175,7 @@ function estimacionAtrasada(ej){
       const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
       const est=getE(mes,ej.emp,ti,anio);
       if(est==='Hecho'||est==='No Corresponde')return;
+      if(soloMarcados&&est!=='Pendiente'&&est!=='Esperando Cliente')return;
       if(!esExigible&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // dentro del plazo solo cuenta si lo marcaron pendiente
       pendientes++;
       if(prom!==null)mins+=prom;else sinDatos++;
@@ -1194,7 +1196,11 @@ function clasificarEstadoEmpresa(ei){
   const avanceEj=avanceEjercicioCompleto(ej);
   const estim=estimacionAtrasada(ej);
   const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
-  if(totalEjMins===0)return{estado:'sinActividad',ej,avanceEj,atrasoItems:[],cierrePend,tiempoAlDia:0};
+  if(totalEjMins===0){
+    // sin minutos cargados: no se listan los meses en blanco como atraso, pero si lo que marcaron Pendiente a proposito
+    const marcados=detalleFaltante(ej,true).rutinariasTxt;
+    return{estado:'sinActividad',ej,avanceEj,atrasoItems:marcados,cierrePend,tiempoAlDia:estimacionAtrasada(ej,true).mins};
+  }
   const alDia=avanceHastaHoy(ej);
   const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
   let estado;

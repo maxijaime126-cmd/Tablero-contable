@@ -1143,32 +1143,41 @@ function detalleFaltante(ej,soloMarcados=false){
   const idxTareas=tareasDeEmpresa(ej.emp);
   const anioBase=mesesEj.length?mesesEj[0].anio:null;
   const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
+  const hoyIdx=HOY.getFullYear()*12+HOY.getMonth();
   const porTarea={};
+  const cuenta={cliente:0,propio:0};
   idxTareas.forEach(ti=>{
-    const vencidos=[],enPlazo=[];
     mesesEj.forEach(({mes,anio})=>{
       const esExigible=anio<anioLim||(anio===anioLim&&mes<=mesLim);
       const est=getE(mes,ej.emp,ti,anio);
       if(est==='Hecho'||est==='No Corresponde')return;
       if(soloMarcados&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // sin actividad: solo lo que marcaron a proposito, no los blancos
-      const lbl=MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'')+(est==='Esperando Cliente'?'*':'');
-      if(esExigible)vencidos.push(lbl); // vencido: blanco, Pendiente o Esperando Cliente
-      else if(est==='Pendiente'||est==='Esperando Cliente')enPlazo.push(lbl); // dentro del plazo: solo si lo marcaron pendiente a proposito
+      if(!esExigible&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // dentro del plazo solo cuenta si lo marcaron pendiente
+      const lbl=MESES[mes].slice(0,3)+(anio!==anioBase?" '"+String(anio).slice(2):'');
+      const antig=hoyIdx-(anio*12+mes); // meses transcurridos desde el periodo de la tarea
+      const cliente=est==='Esperando Cliente';
+      const detalle=esExigible?`${antig} ${antig===1?'mes':'meses'}`:'en plazo';
+      const nombre=TAREAS[ti];
+      if(!porTarea[nombre])porTarea[nombre]=[];
+      porTarea[nombre].push({lbl,detalle,cliente});
+      cuenta[cliente?'cliente':'propio']++;
     });
-    if(vencidos.length||enPlazo.length)porTarea[TAREAS[ti]]={vencidos,enPlazo};
   });
-  const rutinariasTxt=Object.entries(porTarea).map(([n,{vencidos,enPlazo}])=>`${n}: ${[vencidos.join(', '),enPlazo.length?enPlazo.join(', ')+' (en plazo)':''].filter(Boolean).join(' · ')}`);
+  const rutinariasTxt=Object.entries(porTarea).map(([n,arr])=>`${n}: ${arr.map(e=>`${e.lbl}${e.cliente?'*':''} (${e.detalle})`).join(', ')}`);
+  // mismo detalle, separado por causa: documentacion que no mando el cliente vs pendiente propio
+  const grupo=(cliente)=>Object.entries(porTarea).map(([n,arr])=>[n,arr.filter(e=>e.cliente===cliente)]).filter(([,arr])=>arr.length).map(([n,arr])=>`${n}: ${arr.map(e=>`${e.lbl} (${e.detalle})`).join(', ')}`);
+  const grupos={cliente:grupo(true),propio:grupo(false)};
   const idxReal=ej._idx!==undefined?ej._idx:data.ejercicios.indexOf(ej);
   // el cierre de balance NUNCA cuenta como "atrasado" (se hace al final del ejercicio), solo se informa aparte
   const cierrePend=(ej.tareascierre||[]).filter((tc,ci)=>{const est=getCierreE(idxReal,ci);return est!=='Hecho'&&est!=='No Corresponde';}).map(tc=>tc.nombre);
-  return{rutinariasTxt,cierrePend};
+  return{rutinariasTxt,cierrePend,grupos,cuenta};
 }
 // tiempo estimado de lo vencido + lo marcado pendiente aunque este dentro del plazo (no cuenta meses futuros sin marcar, ni el cierre de balance)
 function estimacionAtrasada(ej,soloMarcados=false){
   const meses=getMesesEj(ej)||[];
   const idxTareas=tareasDeEmpresa(ej.emp);
   const{mes:mesLim,anio:anioLim}=mesLimiteAlDia();
-  let pendientes=0,mins=0,sinDatos=0;
+  let pendientes=0,mins=0,sinDatos=0,minsCliente=0,minsPropio=0;
   idxTareas.forEach(ti=>{
     const prom=historicoEmpTarea(ej.emp,ti);
     meses.forEach(({mes,anio})=>{
@@ -1178,10 +1187,10 @@ function estimacionAtrasada(ej,soloMarcados=false){
       if(soloMarcados&&est!=='Pendiente'&&est!=='Esperando Cliente')return;
       if(!esExigible&&est!=='Pendiente'&&est!=='Esperando Cliente')return; // dentro del plazo solo cuenta si lo marcaron pendiente
       pendientes++;
-      if(prom!==null)mins+=prom;else sinDatos++;
+      if(prom!==null){mins+=prom;if(est==='Esperando Cliente')minsCliente+=prom;else minsPropio+=prom;}else sinDatos++;
     });
   });
-  return{pendientes,mins,sinDatos};
+  return{pendientes,mins,minsPropio,minsCliente,sinDatos};
 }
 // clasificacion unica de estado de una empresa, usada tanto en Resumen Ejecutivo como en el Informe Mensual
 // para que las dos vistas digan siempre lo mismo. 4 niveles:
@@ -1191,15 +1200,17 @@ function estimacionAtrasada(ej,soloMarcados=false){
 //  - alDia: cero pendientes
 function clasificarEstadoEmpresa(ei){
   const ej=ejActivoDeEmpresa(ei);
-  if(!ej)return{estado:'sinActividad',ej:null,avanceEj:null,atrasoItems:[],cierrePend:[],tiempoAlDia:0};
+  if(!ej)return{estado:'sinActividad',ej:null,avanceEj:null,atrasoItems:[],cierrePend:[],tiempoAlDia:0,grupos:{cliente:[],propio:[]},cuenta:{cliente:0,propio:0},tiempoPropio:0,tiempoCliente:0};
   const totalEjMins=totalMinsEjercicio(ej);
   const avanceEj=avanceEjercicioCompleto(ej);
   const estim=estimacionAtrasada(ej);
-  const{rutinariasTxt,cierrePend}=detalleFaltante(ej);
+  const det=detalleFaltante(ej);
+  const{rutinariasTxt,cierrePend}=det;
   if(totalEjMins===0){
     // sin minutos cargados: no se listan los meses en blanco como atraso, pero si lo que marcaron Pendiente a proposito
-    const marcados=detalleFaltante(ej,true).rutinariasTxt;
-    return{estado:'sinActividad',ej,avanceEj,atrasoItems:marcados,cierrePend,tiempoAlDia:estimacionAtrasada(ej,true).mins};
+    const detM=detalleFaltante(ej,true);
+    const estimM=estimacionAtrasada(ej,true);
+    return{estado:'sinActividad',ej,avanceEj,atrasoItems:detM.rutinariasTxt,cierrePend,tiempoAlDia:estimM.mins,grupos:detM.grupos,cuenta:detM.cuenta,tiempoPropio:estimM.minsPropio,tiempoCliente:estimM.minsCliente};
   }
   const alDia=avanceHastaHoy(ej);
   const alDiaOk=!alDia||alDia.pct===null||alDia.pct>=90;
@@ -1207,7 +1218,7 @@ function clasificarEstadoEmpresa(ei){
   if(!alDiaOk)estado='atrasado';
   else if(rutinariasTxt.length>0)estado='proceso';
   else estado='alDia';
-  return{estado,ej,avanceEj,atrasoItems:rutinariasTxt,cierrePend,tiempoAlDia:estim.mins,alDiaPct:alDia?alDia.pct:null};
+  return{estado,ej,avanceEj,atrasoItems:rutinariasTxt,cierrePend,tiempoAlDia:estim.mins,alDiaPct:alDia?alDia.pct:null,grupos:det.grupos,cuenta:det.cuenta,tiempoPropio:estim.minsPropio,tiempoCliente:estim.minsCliente};
 }
 const BADGE_ESTADO={
   atrasado:{html:(pct)=>`<span style="background:#FED7D7;color:#742A2A">🟠 Atrasado${pct!==null?' ('+pct+'%)':''}</span>`,txt:(pct)=>`🟠 Atrasado${pct!==null?' ('+pct+'%)':''}`},
@@ -1229,7 +1240,7 @@ function filaResumenEjecutivo(ei){
     <td>${estadoHtml}</td>
     <td style="white-space:nowrap">${avanceTxt}</td>
     <td class="re-falta">${faltaHtml}</td>
-    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}${c.cierrePend.length?'<div style="font-size:9px;font-weight:400;color:var(--gray)">(no incluye cierre)</div>':''}</td>
+    <td style="font-weight:700;white-space:nowrap">${totalMins?fmtMin(totalMins):'--'}${c.tiempoCliente?`<div style="font-size:9px;font-weight:400;color:var(--purple)">(${fmtMin(c.tiempoCliente)} esperan al cliente)</div>`:''}${c.cierrePend.length?'<div style="font-size:9px;font-weight:400;color:var(--gray)">(no incluye cierre)</div>':''}</td>
   </tr>`;
 }
 function renderResumenEjecutivo(){
@@ -1274,7 +1285,7 @@ function generarResumenEjecutivoPDF(){
       <td>${estadoTxt}</td>
       <td style="text-align:center">${avanceTxt}</td>
       <td style="font-size:10px">${falta}</td>
-      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}${c.cierrePend.length?'<br><span style="font-size:9px;font-weight:400;color:#A0AEC0">(no incluye cierre)</span>':''}</td>
+      <td style="text-align:right;font-weight:700">${totalMins?fmtMin(totalMins):'--'}${c.tiempoCliente?`<br><span style="font-size:9px;font-weight:400;color:#553C9A">(${fmtMin(c.tiempoCliente)} esperan al cliente)</span>`:''}${c.cierrePend.length?'<br><span style="font-size:9px;font-weight:400;color:#A0AEC0">(no incluye cierre)</span>':''}</td>
     </tr>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Resumen ejecutivo</title>
@@ -1318,16 +1329,17 @@ function generarInformeMensual(){
 
   // estado y backlog de cada empresa de la cartera completa (siempre las 9, sin excepcion)
   // usa el mismo clasificador que el Resumen Ejecutivo, para que los dos informes digan siempre lo mismo
-  let countAlDia=0,countProceso=0,countAtrasado=0,countSinActividad=0,tiempoTotalRegularizar=0;
+  let countAlDia=0,countProceso=0,countAtrasado=0,countSinActividad=0,tiempoTotalRegularizar=0,tiempoTotalPropio=0,tiempoTotalCliente=0,pendCliente=0,pendPropio=0;
   const filasData=EMPRESAS.map((emp,ei)=>{
     const minsRutMes=minsRutPorEmp[ei]||0;
     const minsCieMes=minsCiePorEmp[ei]||0;
     const c=clasificarEstadoEmpresa(ei);
+    pendCliente+=c.cuenta.cliente;pendPropio+=c.cuenta.propio;
     if(c.estado==='sinActividad')countSinActividad++;
-    else if(c.estado==='atrasado'){countAtrasado++;tiempoTotalRegularizar+=c.tiempoAlDia||0;}
-    else if(c.estado==='proceso'){countProceso++;tiempoTotalRegularizar+=c.tiempoAlDia||0;}
+    else if(c.estado==='atrasado'){countAtrasado++;tiempoTotalRegularizar+=c.tiempoAlDia||0;tiempoTotalPropio+=c.tiempoPropio||0;tiempoTotalCliente+=c.tiempoCliente||0;}
+    else if(c.estado==='proceso'){countProceso++;tiempoTotalRegularizar+=c.tiempoAlDia||0;tiempoTotalPropio+=c.tiempoPropio||0;tiempoTotalCliente+=c.tiempoCliente||0;}
     else countAlDia++;
-    return{emp,ei,estado:c.estado,minsRutMes,minsCieMes,atrasoItems:c.atrasoItems,tiempoAlDia:c.tiempoAlDia,avanceEj:c.avanceEj};
+    return{emp,ei,estado:c.estado,minsRutMes,minsCieMes,atrasoItems:c.atrasoItems,tiempoAlDia:c.tiempoAlDia,avanceEj:c.avanceEj,grupos:c.grupos,tiempoPropio:c.tiempoPropio,tiempoCliente:c.tiempoCliente};
   });
   // orden por atencion: atrasado > en proceso > al dia > sin actividad
   const ordenEstado={atrasado:0,proceso:1,alDia:2,sinActividad:3};
@@ -1342,14 +1354,15 @@ function generarInformeMensual(){
 
   // TABLA 1: tareas rutinarias mensuales (siempre las 9 empresas)
   const filasTabla1=filasData.map(f=>{
-    const atrasoHtml=f.atrasoItems.length?f.atrasoItems.map(t=>`• ${t}`).join('<br>'):(f.estado==='sinActividad'?'—':'Sin atraso');
+    const blk=(titulo,arr,color)=>arr.length?`<div style="margin-bottom:3px"><strong style="color:${color}">${titulo}</strong><br>${arr.map(t=>`• ${t}`).join('<br>')}</div>`:'';
+    const atrasoHtml=(blk('Esperando documentacion del cliente',f.grupos.cliente,'#553C9A')+blk('Pendiente propio',f.grupos.propio,'#742A2A'))||(f.estado==='sinActividad'?'—':'Sin atraso');
     const avanceSub=f.avanceEj?`<div style="font-size:9px;color:#718096">${f.avanceEj.hechas}/${f.avanceEj.esperadas} del ejercicio (${f.avanceEj.pct}%)</div>`:'';
     return`<tr>
       <td><strong>${f.emp}</strong></td>
       <td>${badgeEstado[f.estado]}${avanceSub}</td>
       <td style="text-align:right">${f.minsRutMes?fmtMin(f.minsRutMes):'--'}</td>
       <td style="font-size:10px">${atrasoHtml}</td>
-      <td style="text-align:right;font-weight:700">${f.tiempoAlDia?fmtMin(f.tiempoAlDia):'--'}</td>
+      <td style="text-align:right;font-weight:700">${f.tiempoAlDia?fmtMin(f.tiempoAlDia):'--'}${f.tiempoCliente?`<div style="font-size:9px;font-weight:400;color:#553C9A">(${fmtMin(f.tiempoCliente)} dependen del cliente)</div>`:''}</td>
     </tr>`;
   }).join('');
 
@@ -1372,7 +1385,7 @@ function generarInformeMensual(){
   ].join('')||'<div style="color:#A0AEC0">Sin alertas para este periodo.</div>';
 
   // plan de accion: detalle de empresas con tiempo pendiente para regularizar
-  const planAccionItems=filasData.filter(f=>f.tiempoAlDia>0).map(f=>`<div>${f.emp}: <strong>${fmtMin(f.tiempoAlDia)}</strong></div>`);
+  const planAccionItems=filasData.filter(f=>f.tiempoAlDia>0).map(f=>`<div>${f.emp}: <strong>${f.tiempoPropio?fmtMin(f.tiempoPropio):'--'}</strong> propio${f.tiempoCliente?` + ${fmtMin(f.tiempoCliente)} esperando al cliente`:''}</div>`);
   const planAccionHtml=planAccionItems.length?planAccionItems.join(''):'<div style="color:#A0AEC0">Sin regularizaciones pendientes.</div>';
 
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe mensual ${MESES[mes]} ${anio}</title>
@@ -1390,6 +1403,8 @@ function generarInformeMensual(){
     <div class="kpi"><div class="kpi-lbl">Horas rutinarias en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(totalRutMes)||'--'}</div></div>
     <div class="kpi"><div class="kpi-lbl">Horas de cierre en ${MESES[mes]}</div><div class="kpi-v">${fmtMin(totalCieMes)||'--'}</div></div>
     <div class="kpi"><div class="kpi-lbl">Total horas ejecutadas</div><div class="kpi-v" style="color:#2B6CB0">${fmtMin(totalRutMes+totalCieMes)||'--'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Pendientes por documentacion del cliente</div><div class="kpi-v" style="color:#553C9A">${pendCliente}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Pendientes propios</div><div class="kpi-v" style="color:#742A2A">${pendPropio}</div></div>
   </div>
   <div style="font-size:10px;color:#A0AEC0;margin:-10px 0 16px">Las horas de este resumen son las realmente ejecutadas durante ${MESES[mes]} (segun la fecha en que se cargaron), sin importar de que mes o ejercicio era la tarea.</div>
 
@@ -1401,7 +1416,8 @@ function generarInformeMensual(){
 
   <div class="sec-title">Plan de accion / regularizacion</div>
   <div class="alertas">
-    <div style="font-weight:700;margin-bottom:6px">Tiempo total estimado para poner al dia toda la cartera: ${tiempoTotalRegularizar?fmtMin(tiempoTotalRegularizar):'--'}</div>
+    <div style="font-weight:700;margin-bottom:2px">Tiempo propio para ponerse al dia: ${tiempoTotalPropio?fmtMin(tiempoTotalPropio):'--'}</div>
+    <div style="margin-bottom:6px;color:#553C9A">Tiempo adicional cuando llegue la documentacion pendiente de los clientes: ${tiempoTotalCliente?fmtMin(tiempoTotalCliente):'--'}</div>
     ${planAccionHtml}
   </div>
 
@@ -1409,7 +1425,7 @@ function generarInformeMensual(){
   <div class="alertas">${alertasHtml}</div>
   ${notas?`<div class="sec-title">Observaciones</div><div class="alertas" style="white-space:pre-line">${notas.replace(/</g,'&lt;')}</div>`:''}
   <div class="firma"><div>Preparado por</div><div>Fecha</div></div>
-  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para regularizar no incluye tareas de cierre de balance (se calculan por separado en la Tabla 2).</div>
+  <div class="footer">Informe generado automaticamente por el Tablero de Control Contable. El tiempo para regularizar no incluye tareas de cierre de balance (se calculan por separado en la Tabla 2). La antiguedad es la cantidad de meses desde el periodo de cada tarea; "en plazo" es lo que todavia esta dentro del margen normal.</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
   toast(`Informe de ${MESES[mes]} ${anio} generado`);

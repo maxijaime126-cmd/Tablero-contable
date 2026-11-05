@@ -229,3 +229,11 @@ button:hover{background:var(--grayl)}
 .pb-periodica{background:var(--orangel);color:var(--orange)}
 .pb-ejercicio{background:var(--redl);color:var(--red)}
 .pb-espera{background:#E9D8FD;color:#553C9A}
+#plan-gantt th{background:var(--navy);color:#fff;padding:6px 8px;font-size:11px;text-align:left;white-space:nowrap}
+#plan-gantt th.pg-w{text-align:center;padding:6px 2px;font-size:10px;min-width:44px}
+#plan-gantt td{padding:6px 8px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+#plan-gantt td.pg-c{padding:0;min-width:44px;height:36px;border-left:1px solid #EDF2F7}
+#plan-gantt .pg-hoy{border-left:2px solid var(--red)!important}
+#plan-gantt .pg-t{min-width:210px}
+#plan-gantt .pg-n{font-size:10px;color:var(--gray)}
+#plan-gantt tbody tr:hover td:not(.pg-c){background:var(--grayl)}

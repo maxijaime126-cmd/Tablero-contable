@@ -121,7 +121,7 @@ async function loadData(){
   if(!data.anos[ANO_ACTUAL])data.anos[ANO_ACTUAL]={tareas:{},tiempos:[]};
   if(!data.tareasEmpresa)data.tareasEmpresa={};
   if(!data.periodicas)data.periodicas=[];
-  if(!data.plantillasCierre)data.plantillasCierre=[];
+  if(!data.plantillasCierre)data.plantillasCierre=[];if(!data.planItems)data.planItems=[];
   if(!data.config)data.config={};
   if(data.config.margenAtraso===undefined)data.config.margenAtraso=1;
   data.ejercicios.forEach(ej=>{
@@ -186,7 +186,7 @@ function importData(){
       if(!data.ejercicios)data.ejercicios=[];
       if(!data.tareasEmpresa)data.tareasEmpresa={};
       if(!data.periodicas)data.periodicas=[];
-      if(!data.plantillasCierre)data.plantillasCierre=[];
+      if(!data.plantillasCierre)data.plantillasCierre=[];if(!data.planItems)data.planItems=[];
       data.ejercicios.forEach(ej=>{if(!ej.tareascierre)ej.tareascierre=[];if(!ej.estadoscierre)ej.estadoscierre=[];if(ej.cerrado===undefined)ej.cerrado=false;});
       if(data.empresas&&data.empresas.length)EMPRESAS=data.empresas;
       if(data.tareas_nombres&&data.tareas_nombres.length)TAREAS=data.tareas_nombres;
@@ -1431,6 +1431,143 @@ function generarInformeMensual(){
   toast(`Informe de ${MESES[mes]} ${anio} generado`);
 }
 
+// ═══ PLAN DE REGULARIZACION (cronograma tipo Gantt, editable a mano) ═══
+const PLAN_ESTADOS=['Pendiente','En curso','Hecho','Revisado','Espera cliente'];
+const PLAN_COLOR={'Pendiente':'#ECC94B','En curso':'#4299E1','Hecho':'#38A169','Revisado':'#2C7A7B','Espera cliente':'#9F7AEA'};
+let editingPlanId=null;
+function planEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
+function planNuevoId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function planNombreEmp(e){return e>=0&&EMPRESAS[e]?EMPRESAS[e]:'General';}
+function planLunes(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
+function planItemsOrdenados(){
+  return [...data.planItems].sort((a,b)=>{
+    const ai=a.inicio||a.fin||'9999-99-99',bi=b.inicio||b.fin||'9999-99-99';
+    return ai.localeCompare(bi)||planNombreEmp(a.emp).localeCompare(planNombreEmp(b.emp));
+  });
+}
+// semanas (lunes) que cubre el cronograma: desde la fecha mas temprana hasta la mas tardia, siempre incluyendo hoy
+function planSemanas(){
+  const fechas=[HOY];
+  data.planItems.forEach(p=>{if(p.inicio)fechas.push(parseDate(p.inicio));if(p.fin)fechas.push(parseDate(p.fin));});
+  const min=new Date(Math.min(...fechas)),max=new Date(Math.max(...fechas));
+  const semanas=[];const cur=planLunes(min);
+  while((cur<=max||semanas.length<6)&&semanas.length<52){semanas.push(new Date(cur));cur.setDate(cur.getDate()+7);}
+  return semanas;
+}
+function planEnSemana(p,s){
+  const ini=parseDate(p.inicio)||parseDate(p.fin);if(!ini)return false;
+  const fin=parseDate(p.fin)||ini;
+  const fs=new Date(s);fs.setDate(fs.getDate()+6);
+  return ini<=fs&&fin>=s;
+}
+function planFmtSemana(s){return String(s.getDate()).padStart(2,'0')+'/'+String(s.getMonth()+1).padStart(2,'0');}
+function planFechasTxt(p){return(p.inicio||p.fin)?`${p.inicio?fmtDate(p.inicio):'?'} - ${p.fin?fmtDate(p.fin):'?'}`:'Sin fecha';}
+function renderPlanGantt(){
+  const t=document.getElementById('plan-gantt');if(!t)return;
+  if(!data.planItems.length){t.innerHTML='<tbody><tr><td style="padding:1rem;color:#A0AEC0;font-size:12px">Todavia no hay tareas en el plan. Toca "Agregar tarea" o "Cargar atrasos del tablero".</td></tr></tbody>';return;}
+  const semanas=planSemanas();const hoyL=planLunes(HOY).getTime();
+  const th=semanas.map(s=>`<th class="pg-w${s.getTime()===hoyL?' pg-hoy':''}">${planFmtSemana(s)}</th>`).join('');
+  const filas=planItemsOrdenados().map(p=>{
+    const celdas=semanas.map(s=>`<td class="pg-c${s.getTime()===hoyL?' pg-hoy':''}"${planEnSemana(p,s)?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}" title="${p.estado}"`:''}></td>`).join('');
+    const opts=PLAN_ESTADOS.map(e=>`<option${e===p.estado?' selected':''}>${e}</option>`).join('');
+    return `<tr>
+      <td class="pg-t"><strong>${planEsc(planNombreEmp(p.emp))}</strong><div>${planEsc(p.tarea)}</div>${p.nota?`<div class="pg-n">${planEsc(p.nota)}</div>`:''}</td>
+      <td>${planEsc(p.responsable)||'—'}</td>
+      <td style="text-align:right;white-space:nowrap">${p.mins?fmtMin(p.mins):'--'}</td>
+      <td style="white-space:nowrap">${planFechasTxt(p)}</td>
+      <td><select class="sel" style="font-size:11px;padding:3px 5px" onchange="setPlanEstado('${p.id}',this.value)">${opts}</select></td>
+      <td style="white-space:nowrap"><button class="btn-ghost btn-sm" onclick="openPlanModal('${p.id}')" title="Editar"><i class="ti ti-pencil"></i></button><button class="btn-ghost btn-sm" style="color:var(--red)" onclick="deletePlanItem('${p.id}')" title="Eliminar"><i class="ti ti-trash"></i></button></td>
+      ${celdas}
+    </tr>`;
+  }).join('');
+  t.innerHTML=`<thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Horas</th><th>Fechas</th><th>Control</th><th></th>${th}</tr></thead><tbody>${filas}</tbody>`;
+}
+function setPlanEstado(id,val){const p=data.planItems.find(x=>x.id===id);if(!p)return;p.estado=val;markUnsaved();renderPlanGantt();}
+function deletePlanItem(id){
+  if(!confirm('Eliminar esta tarea del plan?'))return;
+  data.planItems=data.planItems.filter(x=>x.id!==id);
+  markUnsaved();saveNow();renderPlanGantt();toast('Tarea eliminada');
+}
+function openPlanModal(id=null){
+  editingPlanId=id;
+  const p=id?data.planItems.find(x=>x.id===id):null;
+  document.getElementById('modal-plan-title').textContent=p?'Editar tarea del plan':'Nueva tarea del plan';
+  const sel=document.getElementById('plan-emp');
+  sel.innerHTML='<option value="-1">General (sin empresa)</option>'+EMPRESAS.map((e,i)=>`<option value="${i}">${planEsc(e)}</option>`).join('');
+  sel.value=p?String(p.emp):'-1';
+  const selEst=document.getElementById('plan-estado');
+  selEst.innerHTML=PLAN_ESTADOS.map(e=>`<option>${e}</option>`).join('');
+  selEst.value=p?p.estado:'Pendiente';
+  document.getElementById('plan-tarea').value=p?p.tarea:'';
+  document.getElementById('plan-resp').value=p?p.responsable:'';
+  document.getElementById('plan-horas').value=p&&p.mins?+(p.mins/60).toFixed(2):'';
+  document.getElementById('plan-inicio').value=p?p.inicio:'';
+  document.getElementById('plan-fin').value=p?p.fin:'';
+  document.getElementById('plan-nota').value=p?p.nota:'';
+  const resp=[...new Set(data.planItems.map(x=>x.responsable).filter(Boolean))];
+  document.getElementById('plan-resp-list').innerHTML=resp.map(r=>`<option value="${planEsc(r)}">`).join('');
+  document.getElementById('plan-del-btn').style.display=p?'inline-flex':'none';
+  document.getElementById('modal-plan').classList.add('open');
+}
+function closePlanModal(){document.getElementById('modal-plan').classList.remove('open');editingPlanId=null;}
+function savePlanItem(){
+  const tarea=document.getElementById('plan-tarea').value.trim();
+  if(!tarea){toast('Escribi que tarea es',true);return;}
+  const inicio=document.getElementById('plan-inicio').value,fin=document.getElementById('plan-fin').value;
+  if(inicio&&fin&&fin<inicio){toast('La fecha de fin no puede ser anterior al inicio',true);return;}
+  const horas=parseFloat(document.getElementById('plan-horas').value);
+  const item={emp:parseInt(document.getElementById('plan-emp').value),tarea,responsable:document.getElementById('plan-resp').value.trim(),inicio,fin,mins:horas>0?Math.round(horas*60):0,estado:document.getElementById('plan-estado').value,nota:document.getElementById('plan-nota').value.trim()};
+  const existente=editingPlanId?data.planItems.find(x=>x.id===editingPlanId):null;
+  if(existente)Object.assign(existente,item);else data.planItems.push({id:planNuevoId(),...item});
+  markUnsaved();saveNow();closePlanModal();renderPlanGantt();toast('Plan guardado');
+}
+function eliminarPlanDesdeModal(){const id=editingPlanId;closePlanModal();if(id)deletePlanItem(id);}
+// arma el plan inicial con los atrasos que ya calcula el tablero (horas propias, y aparte lo que espera al cliente); despues se editan las fechas a mano
+function cargarAtrasosAlPlan(){
+  let nuevos=0;
+  EMPRESAS.forEach((emp,ei)=>{
+    const c=clasificarEstadoEmpresa(ei);
+    const agregar=(tarea,mins,estado)=>{
+      if(!mins)return;
+      if(data.planItems.some(p=>p.emp===ei&&p.tarea===tarea))return;
+      data.planItems.push({id:planNuevoId(),emp:ei,tarea,responsable:'',inicio:'',fin:'',mins,estado,nota:''});
+      nuevos++;
+    };
+    agregar('Ponerse al dia (tareas atrasadas)',c.tiempoPropio,'Pendiente');
+    agregar('Cuando llegue la documentacion del cliente',c.tiempoCliente,'Espera cliente');
+  });
+  if(nuevos){markUnsaved();saveNow();renderPlanGantt();toast(`${nuevos} tarea(s) cargadas. Ahora ponele fecha y responsable`);}
+  else toast('No hay atrasos nuevos para cargar (o ya estaban cargados)');
+}
+function generarPlanPDF(){
+  if(!data.planItems.length){toast('No hay tareas en el plan para imprimir',true);return;}
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const semanas=planSemanas();const hoyL=planLunes(HOY).getTime();
+  const items=planItemsOrdenados();
+  const suma=(arr)=>arr.reduce((a,p)=>a+(p.mins||0),0);
+  const totalMins=suma(items);
+  const hechoMins=suma(items.filter(p=>p.estado==='Hecho'||p.estado==='Revisado'));
+  const clienteMins=suma(items.filter(p=>p.estado==='Espera cliente'));
+  const restanteMins=totalMins-hechoMins-clienteMins;
+  const th=semanas.map(s=>`<th class="w${s.getTime()===hoyL?' hoy':''}">${planFmtSemana(s)}</th>`).join('');
+  const filas=items.map(p=>{
+    const celdas=semanas.map(s=>`<td class="c${s.getTime()===hoyL?' hoy':''}"${planEnSemana(p,s)?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}"`:''}></td>`).join('');
+    return `<tr><td><strong>${planEsc(planNombreEmp(p.emp))}</strong><br>${planEsc(p.tarea)}${p.nota?`<br><span class="n">${planEsc(p.nota)}</span>`:''}</td><td>${planEsc(p.responsable)||'—'}</td><td style="text-align:right">${p.mins?fmtMin(p.mins):'--'}</td><td style="white-space:nowrap">${planFechasTxt(p)}</td><td>${p.estado}</td>${celdas}</tr>`;
+  }).join('');
+  const leyenda=PLAN_ESTADOS.map(e=>`<span class="lg" style="background:${PLAN_COLOR[e]}"></span>${e}`).join(' &nbsp; ');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Plan de regularizacion</title>
+  <style>@page{size:A4 landscape;margin:10mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,sans-serif;color:#1a202c;font-size:10px;margin:0;padding:14px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-end}.res{display:flex;gap:10px;margin-bottom:12px}.res div{flex:1;border:1px solid #CBD5E0;border-radius:6px;padding:6px 10px;text-align:center}.res b{display:block;font-size:15px;color:#1B2A4A}.res small{font-size:8px;text-transform:uppercase;color:#4A5568;font-weight:700}table{width:100%;border-collapse:collapse}th{background:#1B2A4A;color:#fff;padding:5px 6px;text-align:left;font-size:9px}th.w{text-align:center;padding:5px 1px;font-size:8px;min-width:26px}td{padding:5px 6px;border-bottom:1px solid #E2E8F0;vertical-align:middle}td.c{padding:0;height:26px;border-left:1px solid #EDF2F7}.hoy{border-left:2px solid #E53E3E!important}.n{font-size:8px;color:#718096}.lg{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:middle}.leyenda{margin-top:10px;font-size:9px;color:#4A5568}.firma{margin-top:30px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:4px;font-size:9px;color:#718096;text-align:center}.footer{margin-top:12px;font-size:8px;color:#A0AEC0;text-align:center}tr{page-break-inside:avoid}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:9px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:14px">Plan de regularizacion</div><div style="font-size:10px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  <div class="res"><div><b>${fmtMin(totalMins)||'--'}</b><small>Horas planificadas</small></div><div><b>${fmtMin(hechoMins)||'--'}</b><small>Hechas o revisadas</small></div><div><b>${fmtMin(restanteMins)||'--'}</b><small>Propias por hacer</small></div><div><b>${fmtMin(clienteMins)||'--'}</b><small>Esperan al cliente</small></div></div>
+  <table><thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Horas</th><th>Fechas</th><th>Control</th>${th}</tr></thead><tbody>${filas}</tbody></table>
+  <div class="leyenda">${leyenda} &nbsp; | &nbsp; Linea roja: semana actual. Cada columna es una semana (fecha del lunes).</div>
+  <div class="firma"><div>Preparado por</div><div>Revisado por</div><div>Fecha</div></div>
+  <div class="footer">Las horas son estimaciones segun el promedio historico de cada tarea. Documento generado por el Tablero de Control Contable.</div>
+  <script>window.onload=()=>window.print();<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast('Plan generado');
+}
+
 function buildPlanMesSel(){
   const s=document.getElementById('plan-mes-sel');if(!s)return;s.innerHTML='';
   MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o);});
@@ -1465,6 +1602,7 @@ function historicoEmpTarea(empIdx,tareaIdx){
 }
 function renderPlanificacion(){
   renderResumenEjecutivo();
+  renderPlanGantt();
   buildInformeSels();
   const mesSel=document.getElementById('plan-mes-sel');
   const mes=parseInt(mesSel.value);
@@ -1760,6 +1898,7 @@ function eliminarEmpresa(i){
   Object.keys(data.anos).forEach(y=>{const a=data.anos[y];const nt={};Object.entries(a.tareas||{}).forEach(([k,v])=>{const[m,e,t]=k.split('_').map(Number);if(e===i)return;nt[`${m}_${e>i?e-1:e}_${t}`]=v;});a.tareas=nt;a.tiempos=(a.tiempos||[]).filter(r=>r.emp!==i).map(r=>({...r,emp:r.emp>i?r.emp-1:r.emp}));});
   data.ejercicios=data.ejercicios.filter(e=>e.emp!==i).map(e=>({...e,emp:e.emp>i?e.emp-1:e.emp}));
   data.periodicas=data.periodicas.filter(p=>p.emp!==i).map(p=>({...p,emp:p.emp>i?p.emp-1:p.emp}));
+  data.planItems=(data.planItems||[]).filter(p=>p.emp!==i).map(p=>({...p,emp:p.emp>i?p.emp-1:p.emp}));
   const nte={};Object.entries(data.tareasEmpresa||{}).forEach(([k,v])=>{const e=Number(k);if(e===i)return;nte[e>i?e-1:e]=v;});data.tareasEmpresa=nte;
   markUnsaved();saveNow();renderConfig();buildWorkEmpSel();toast(`"${n}" eliminada`);
 }
@@ -1874,7 +2013,7 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo','modal-filtro-resumen'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo','modal-filtro-resumen','modal-plan'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
 function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();buildPlanMesSel();}

@@ -203,9 +203,24 @@
       <table id="resumen-ejec-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
     </div>
 
+    <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Plan de regularizacion (cronograma)</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Que se hace, quien, cuando y como se controla. Se edita a mano.</div>
+      </div>
+      <div class="row-gap">
+        <button class="btn-ghost btn-sm" onclick="cargarAtrasosAlPlan()"><i class="ti ti-download"></i> Cargar atrasos del tablero</button>
+        <button class="btn-ghost btn-sm" onclick="openPlanModal()"><i class="ti ti-plus"></i> Agregar tarea</button>
+        <button class="btn-primary btn-sm" onclick="generarPlanPDF()"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto;padding:0;margin-bottom:1.75rem">
+      <table id="plan-gantt" style="border-collapse:collapse;font-size:12px"></table>
+    </div>
+
     <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
       <div>
-        <div style="font-size:15px;font-weight:700;color:var(--navy)">Informe mensual Departamento de Contabilidad </div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Informe mensual (para socios)</div>
         <div style="font-size:12px;color:var(--gray);margin-top:2px">La foto de un mes puntual, lista para entregar — por defecto el mes recien cerrado</div>
       </div>
       <div class="row-gap">
@@ -453,6 +468,30 @@
     <div class="modal-btns">
       <button onclick="closeNuevaTareaModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveNuevaTarea()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAREA DEL PLAN -->
+<div class="modal-overlay" id="modal-plan">
+  <div class="modal">
+    <h3 id="modal-plan-title">Tarea del plan</h3>
+    <div class="frow"><label>Empresa</label><select id="plan-emp"></select></div>
+    <div class="frow"><label>Tarea / que se hace</label><input type="text" id="plan-tarea" placeholder="Ej: Ponerse al dia con las conciliaciones"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Responsable</label><input type="text" id="plan-resp" list="plan-resp-list" placeholder="Nombre"><datalist id="plan-resp-list"></datalist></div>
+      <div class="frow"><label>Horas estimadas</label><input type="number" id="plan-horas" min="0" step="0.25" placeholder="Ej: 2.5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Fecha de inicio</label><input type="date" id="plan-inicio"></div>
+      <div class="frow"><label>Fecha de fin</label><input type="date" id="plan-fin"></div>
+    </div>
+    <div class="frow"><label>Control (estado)</label><select id="plan-estado"></select></div>
+    <div class="frow"><label>Nota (opcional)</label><input type="text" id="plan-nota" placeholder="Ej: depende de que llegue el extracto"></div>
+    <div class="modal-btns">
+      <button onclick="closePlanModal()">Cancelar</button>
+      <button class="btn-danger" id="plan-del-btn" style="display:none" onclick="eliminarPlanDesdeModal()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn-primary" onclick="savePlanItem()"><i class="ti ti-check"></i> Guardar</button>
     </div>
   </div>
 </div>

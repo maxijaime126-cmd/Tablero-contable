@@ -1431,27 +1431,63 @@ function generarInformeMensual(){
   toast(`Informe de ${MESES[mes]} ${anio} generado`);
 }
 
-// ═══ PLAN DE REGULARIZACION (cronograma tipo Gantt, editable a mano) ═══
+// ═══ PLAN DE TRABAJO (cronograma completo tipo Gantt, editable a mano) ═══
+// tipos: regularizacion (atrasos), rutinaria (contabilidad rutinaria de un mes), cierre, otro
 const PLAN_ESTADOS=['Pendiente','En curso','Hecho','Revisado','Espera cliente'];
 const PLAN_COLOR={'Pendiente':'#ECC94B','En curso':'#4299E1','Hecho':'#38A169','Revisado':'#2C7A7B','Espera cliente':'#9F7AEA'};
+const PLAN_TIPOS={regularizacion:'Regularizacion de atrasos',rutinaria:'Contabilidad rutinaria del mes',cierre:'Cierre de balance',otro:'Otro'};
 let editingPlanId=null;
 function planEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
 function planNuevoId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function planNombreEmp(e){return e>=0&&EMPRESAS[e]?EMPRESAS[e]:'General';}
 function planLunes(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
+function planIso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function planLlenarListas(){
+  const lista=(campo)=>[...new Set(data.planItems.map(x=>x[campo]).filter(Boolean))].map(r=>`<option value="${planEsc(r)}">`).join('');
+  const r=document.getElementById('plan-resp-list'),c=document.getElementById('plan-ctrl-list');
+  if(r)r.innerHTML=lista('responsable');
+  if(c)c.innerHTML=lista('controlador');
+}
+// avance REAL (segun lo que se marco en Cargar trabajo) de un bloque "contabilidad rutinaria de un mes"
+function planAvanceItem(p){
+  if(p.tipo!=='rutinaria'||p.emp<0||p.periodoMes==null||!p.periodoAnio)return null;
+  let hechas=0,esperadas=0;
+  tareasDeEmpresa(p.emp).forEach(ti=>{
+    const est=getE(p.periodoMes,p.emp,ti,p.periodoAnio);
+    if(est==='No Corresponde')return;
+    esperadas++;if(est==='Hecho')hechas++;
+  });
+  return esperadas?{hechas,esperadas,pct:Math.round(hechas/esperadas*100)}:null;
+}
+function planVencido(p){
+  if(p.estado==='Hecho'||p.estado==='Revisado'||p.estado==='Espera cliente')return false;
+  const fin=parseDate(p.fin);if(!fin||fin>=HOY)return false;
+  const av=planAvanceItem(p);
+  return av?av.pct<100:true;
+}
+function buildPlanFiltros(){
+  const s=document.getElementById('plan-filtro-emp');if(!s)return;
+  const prev=s.value||'todas';
+  s.innerHTML='<option value="todas">Todas las empresas</option><option value="-1">General</option>'+EMPRESAS.map((e,i)=>`<option value="${i}">${planEsc(e)}</option>`).join('');
+  s.value=[...s.options].some(o=>o.value===prev)?prev:'todas';
+}
 function planItemsOrdenados(){
-  return [...data.planItems].sort((a,b)=>{
-    const ai=a.inicio||a.fin||'9999-99-99',bi=b.inicio||b.fin||'9999-99-99';
-    return ai.localeCompare(bi)||planNombreEmp(a.emp).localeCompare(planNombreEmp(b.emp));
+  const oEl=document.getElementById('plan-orden'),fEl=document.getElementById('plan-filtro-emp');
+  const orden=oEl&&oEl.value?oEl.value:'fecha',filtro=fEl&&fEl.value?fEl.value:'todas';
+  const clave=(p)=>p.inicio||p.fin||'9999-99-99';
+  return data.planItems.filter(p=>filtro==='todas'||String(p.emp)===filtro).sort((a,b)=>{
+    const porFecha=clave(a).localeCompare(clave(b));
+    const porEmp=planNombreEmp(a.emp).localeCompare(planNombreEmp(b.emp));
+    return orden==='empresa'?(porEmp||porFecha):(porFecha||porEmp);
   });
 }
-// semanas (lunes) que cubre el cronograma: desde la fecha mas temprana hasta la mas tardia, siempre incluyendo hoy
-function planSemanas(){
+// semanas (lunes) que cubre el cronograma: de la fecha mas temprana a la mas tardia, siempre incluyendo hoy
+function planSemanas(items){
   const fechas=[HOY];
-  data.planItems.forEach(p=>{if(p.inicio)fechas.push(parseDate(p.inicio));if(p.fin)fechas.push(parseDate(p.fin));});
+  items.forEach(p=>{[p.inicio,p.fin,p.fechaControl].forEach(f=>{if(f)fechas.push(parseDate(f));});});
   const min=new Date(Math.min(...fechas)),max=new Date(Math.max(...fechas));
   const semanas=[];const cur=planLunes(min);
-  while((cur<=max||semanas.length<6)&&semanas.length<52){semanas.push(new Date(cur));cur.setDate(cur.getDate()+7);}
+  while((cur<=max||semanas.length<6)&&semanas.length<60){semanas.push(new Date(cur));cur.setDate(cur.getDate()+7);}
   return semanas;
 }
 function planEnSemana(p,s){
@@ -1460,33 +1496,62 @@ function planEnSemana(p,s){
   const fs=new Date(s);fs.setDate(fs.getDate()+6);
   return ini<=fs&&fin>=s;
 }
+function planControlEnSemana(p,s){
+  const d=parseDate(p.fechaControl);if(!d)return false;
+  const fs=new Date(s);fs.setDate(fs.getDate()+6);
+  return d>=s&&d<=fs;
+}
 function planFmtSemana(s){return String(s.getDate()).padStart(2,'0')+'/'+String(s.getMonth()+1).padStart(2,'0');}
 function planFechasTxt(p){return(p.inicio||p.fin)?`${p.inicio?fmtDate(p.inicio):'?'} - ${p.fin?fmtDate(p.fin):'?'}`:'Sin fecha';}
+function planControlTxt(p){
+  if(!p.controlador&&!p.fechaControl)return '—';
+  return `${planEsc(p.controlador)||'—'}${p.fechaControl?`<div class="pg-n">control: ${fmtDate(p.fechaControl)}</div>`:''}`;
+}
+function planAvanceTxt(p,html){
+  const av=planAvanceItem(p);if(!av)return '—';
+  const txt=`${av.hechas}/${av.esperadas} (${av.pct}%)`;
+  if(!html)return txt;
+  const color=av.pct>=100?'var(--green)':planVencido(p)?'var(--red)':'var(--gray)';
+  return `<span style="font-weight:700;color:${color}">${txt}</span>`;
+}
 function renderPlanGantt(){
   const t=document.getElementById('plan-gantt');if(!t)return;
-  if(!data.planItems.length){t.innerHTML='<tbody><tr><td style="padding:1rem;color:#A0AEC0;font-size:12px">Todavia no hay tareas en el plan. Toca "Agregar tarea" o "Cargar atrasos del tablero".</td></tr></tbody>';return;}
-  const semanas=planSemanas();const hoyL=planLunes(HOY).getTime();
+  buildPlanFiltros();
+  if(!data.planItems.length){t.innerHTML='<tbody><tr><td style="padding:1rem;color:#A0AEC0;font-size:12px">Todavia no hay tareas en el plan. Toca "Armar plan del periodo" para generar el trabajo de los proximos meses, o "Agregar tarea".</td></tr></tbody>';return;}
+  const items=planItemsOrdenados();
+  if(!items.length){t.innerHTML='<tbody><tr><td style="padding:1rem;color:#A0AEC0;font-size:12px">No hay tareas para ese filtro.</td></tr></tbody>';return;}
+  const semanas=planSemanas(items);const hoyL=planLunes(HOY).getTime();
   const th=semanas.map(s=>`<th class="pg-w${s.getTime()===hoyL?' pg-hoy':''}">${planFmtSemana(s)}</th>`).join('');
-  const filas=planItemsOrdenados().map(p=>{
-    const celdas=semanas.map(s=>`<td class="pg-c${s.getTime()===hoyL?' pg-hoy':''}"${planEnSemana(p,s)?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}" title="${p.estado}"`:''}></td>`).join('');
+  const filas=items.map(p=>{
+    const celdas=semanas.map(s=>{
+      const on=planEnSemana(p,s),ctl=planControlEnSemana(p,s);
+      return `<td class="pg-c${s.getTime()===hoyL?' pg-hoy':''}"${on?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}" title="${p.estado}"`:''}>${ctl?`<span class="pg-ctl" title="Control: ${planEsc(p.controlador)} ${fmtDate(p.fechaControl)}">◆</span>`:''}</td>`;
+    }).join('');
+    const venc=planVencido(p);
     const opts=PLAN_ESTADOS.map(e=>`<option${e===p.estado?' selected':''}>${e}</option>`).join('');
     return `<tr>
       <td class="pg-t"><strong>${planEsc(planNombreEmp(p.emp))}</strong><div>${planEsc(p.tarea)}</div>${p.nota?`<div class="pg-n">${planEsc(p.nota)}</div>`:''}</td>
       <td>${planEsc(p.responsable)||'—'}</td>
+      <td>${planControlTxt(p)}</td>
       <td style="text-align:right;white-space:nowrap">${p.mins?fmtMin(p.mins):'--'}</td>
-      <td style="white-space:nowrap">${planFechasTxt(p)}</td>
+      <td style="white-space:nowrap"><span${venc?' class="pg-venc"':''}>${planFechasTxt(p)}${venc?'<div>vencido</div>':''}</span></td>
+      <td style="white-space:nowrap">${planAvanceTxt(p,true)}</td>
       <td><select class="sel" style="font-size:11px;padding:3px 5px" onchange="setPlanEstado('${p.id}',this.value)">${opts}</select></td>
       <td style="white-space:nowrap"><button class="btn-ghost btn-sm" onclick="openPlanModal('${p.id}')" title="Editar"><i class="ti ti-pencil"></i></button><button class="btn-ghost btn-sm" style="color:var(--red)" onclick="deletePlanItem('${p.id}')" title="Eliminar"><i class="ti ti-trash"></i></button></td>
       ${celdas}
     </tr>`;
   }).join('');
-  t.innerHTML=`<thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Horas</th><th>Fechas</th><th>Control</th><th></th>${th}</tr></thead><tbody>${filas}</tbody>`;
+  t.innerHTML=`<thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Controla</th><th>Horas</th><th>Fechas</th><th>Avance real</th><th>Estado</th><th></th>${th}</tr></thead><tbody>${filas}</tbody>`;
 }
 function setPlanEstado(id,val){const p=data.planItems.find(x=>x.id===id);if(!p)return;p.estado=val;markUnsaved();renderPlanGantt();}
 function deletePlanItem(id){
   if(!confirm('Eliminar esta tarea del plan?'))return;
   data.planItems=data.planItems.filter(x=>x.id!==id);
   markUnsaved();saveNow();renderPlanGantt();toast('Tarea eliminada');
+}
+function planTogglePeriodo(){
+  const esRut=document.getElementById('plan-tipo').value==='rutinaria';
+  document.getElementById('plan-periodo-wrap').style.display=esRut?'grid':'none';
 }
 function openPlanModal(id=null){
   editingPlanId=id;
@@ -1495,17 +1560,24 @@ function openPlanModal(id=null){
   const sel=document.getElementById('plan-emp');
   sel.innerHTML='<option value="-1">General (sin empresa)</option>'+EMPRESAS.map((e,i)=>`<option value="${i}">${planEsc(e)}</option>`).join('');
   sel.value=p?String(p.emp):'-1';
+  document.getElementById('plan-tipo').innerHTML=Object.entries(PLAN_TIPOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  document.getElementById('plan-tipo').value=p&&p.tipo?p.tipo:'otro';
+  document.getElementById('plan-pmes').innerHTML=MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  document.getElementById('plan-panio').innerHTML=[ANO_ACTUAL-1,ANO_ACTUAL,ANO_ACTUAL+1,ANO_ACTUAL+2].map(y=>`<option>${y}</option>`).join('');
+  document.getElementById('plan-pmes').value=p&&p.periodoMes!=null?p.periodoMes:MES_ACTUAL;
+  document.getElementById('plan-panio').value=p&&p.periodoAnio?p.periodoAnio:ANO_ACTUAL;
   const selEst=document.getElementById('plan-estado');
   selEst.innerHTML=PLAN_ESTADOS.map(e=>`<option>${e}</option>`).join('');
   selEst.value=p?p.estado:'Pendiente';
   document.getElementById('plan-tarea').value=p?p.tarea:'';
   document.getElementById('plan-resp').value=p?p.responsable:'';
+  document.getElementById('plan-ctrl').value=p&&p.controlador?p.controlador:'';
   document.getElementById('plan-horas').value=p&&p.mins?+(p.mins/60).toFixed(2):'';
   document.getElementById('plan-inicio').value=p?p.inicio:'';
   document.getElementById('plan-fin').value=p?p.fin:'';
+  document.getElementById('plan-fctrl').value=p&&p.fechaControl?p.fechaControl:'';
   document.getElementById('plan-nota').value=p?p.nota:'';
-  const resp=[...new Set(data.planItems.map(x=>x.responsable).filter(Boolean))];
-  document.getElementById('plan-resp-list').innerHTML=resp.map(r=>`<option value="${planEsc(r)}">`).join('');
+  planLlenarListas();planTogglePeriodo();
   document.getElementById('plan-del-btn').style.display=p?'inline-flex':'none';
   document.getElementById('modal-plan').classList.add('open');
 }
@@ -1513,16 +1585,74 @@ function closePlanModal(){document.getElementById('modal-plan').classList.remove
 function savePlanItem(){
   const tarea=document.getElementById('plan-tarea').value.trim();
   if(!tarea){toast('Escribi que tarea es',true);return;}
+  const tipo=document.getElementById('plan-tipo').value;
+  const emp=parseInt(document.getElementById('plan-emp').value);
+  if(tipo==='rutinaria'&&emp<0){toast('La contabilidad rutinaria del mes necesita una empresa',true);return;}
   const inicio=document.getElementById('plan-inicio').value,fin=document.getElementById('plan-fin').value;
   if(inicio&&fin&&fin<inicio){toast('La fecha de fin no puede ser anterior al inicio',true);return;}
   const horas=parseFloat(document.getElementById('plan-horas').value);
-  const item={emp:parseInt(document.getElementById('plan-emp').value),tarea,responsable:document.getElementById('plan-resp').value.trim(),inicio,fin,mins:horas>0?Math.round(horas*60):0,estado:document.getElementById('plan-estado').value,nota:document.getElementById('plan-nota').value.trim()};
+  const item={emp,tipo,tarea,responsable:document.getElementById('plan-resp').value.trim(),controlador:document.getElementById('plan-ctrl').value.trim(),inicio,fin,fechaControl:document.getElementById('plan-fctrl').value,mins:horas>0?Math.round(horas*60):0,estado:document.getElementById('plan-estado').value,nota:document.getElementById('plan-nota').value.trim()};
+  if(tipo==='rutinaria'){item.periodoMes=parseInt(document.getElementById('plan-pmes').value);item.periodoAnio=parseInt(document.getElementById('plan-panio').value);}
   const existente=editingPlanId?data.planItems.find(x=>x.id===editingPlanId):null;
-  if(existente)Object.assign(existente,item);else data.planItems.push({id:planNuevoId(),...item});
+  if(existente){if(tipo!=='rutinaria'){delete existente.periodoMes;delete existente.periodoAnio;}Object.assign(existente,item);}
+  else data.planItems.push({id:planNuevoId(),...item});
   markUnsaved();saveNow();closePlanModal();renderPlanGantt();toast('Plan guardado');
 }
 function eliminarPlanDesdeModal(){const id=editingPlanId;closePlanModal();if(id)deletePlanItem(id);}
-// arma el plan inicial con los atrasos que ya calcula el tablero (horas propias, y aparte lo que espera al cliente); despues se editan las fechas a mano
+// ── armar el plan de los proximos meses: un bloque "contabilidad rutinaria" por empresa y por mes ──
+function openPlanPeriodoModal(){
+  document.getElementById('pp-mes').innerHTML=MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  document.getElementById('pp-mes').value=MES_ACTUAL;
+  document.getElementById('pp-anio').innerHTML=[ANO_ACTUAL-1,ANO_ACTUAL,ANO_ACTUAL+1].map(y=>`<option>${y}</option>`).join('');
+  document.getElementById('pp-anio').value=ANO_ACTUAL;
+  document.getElementById('pp-cant').value=3;
+  document.getElementById('pp-lag').value=getMargenAtraso()>0?'1':'0';
+  document.getElementById('pp-dini').value=20;
+  document.getElementById('pp-dfin').value=25;
+  document.getElementById('pp-dctrl').value=5;
+  document.getElementById('pp-resp').value='';
+  document.getElementById('pp-ctrl').value='';
+  planLlenarListas();
+  const list=document.getElementById('pp-emps');list.innerHTML='';
+  EMPRESAS.forEach((e,i)=>{
+    const row=document.createElement('label');row.className='cfg-row';row.style.cursor='pointer';
+    row.innerHTML=`<input type="checkbox" data-idx="${i}" checked style="margin-right:4px"> <span style="flex:1">${planEsc(e)}</span>`;
+    list.appendChild(row);
+  });
+  document.getElementById('modal-plan-periodo').classList.add('open');
+}
+function closePlanPeriodoModal(){document.getElementById('modal-plan-periodo').classList.remove('open');}
+function marcarTodasPlanPeriodo(v){document.querySelectorAll('#pp-emps input[type=checkbox]').forEach(c=>c.checked=v);}
+function armarPlanPeriodo(){
+  const mes=parseInt(document.getElementById('pp-mes').value),anio=parseInt(document.getElementById('pp-anio').value);
+  const cant=parseInt(document.getElementById('pp-cant').value),lag=parseInt(document.getElementById('pp-lag').value);
+  const dini=parseInt(document.getElementById('pp-dini').value),dfin=parseInt(document.getElementById('pp-dfin').value);
+  const dctrl=parseInt(document.getElementById('pp-dctrl').value);
+  const resp=document.getElementById('pp-resp').value.trim(),ctrl=document.getElementById('pp-ctrl').value.trim();
+  if(!(cant>=1&&cant<=12)){toast('La cantidad de meses va de 1 a 12',true);return;}
+  if(!(dini>=1&&dini<=31&&dfin>=1&&dfin<=31)||dfin<dini){toast('Revisa los dias: el fin no puede ser anterior al inicio',true);return;}
+  const emps=[...document.querySelectorAll('#pp-emps input[type=checkbox]')].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+  if(!emps.length){toast('Elegi al menos una empresa',true);return;}
+  let nuevos=0,omitidos=0;
+  for(let k=0;k<cant;k++){
+    const fe=new Date(anio,mes+k,1),fp=new Date(anio,mes+k-lag,1); // mes en que se trabaja / mes contable que se trabaja
+    const Em=fe.getMonth(),Ey=fe.getFullYear(),Pm=fp.getMonth(),Py=fp.getFullYear();
+    const dim=new Date(Ey,Em+1,0).getDate();
+    const ini=new Date(Ey,Em,Math.min(dini,dim)),fin=new Date(Ey,Em,Math.min(dfin,dim));
+    const ctl=new Date(fin);ctl.setDate(ctl.getDate()+(isNaN(dctrl)?0:dctrl));
+    emps.forEach(ei=>{
+      if(data.planItems.some(p=>p.tipo==='rutinaria'&&p.emp===ei&&p.periodoMes===Pm&&p.periodoAnio===Py)){omitidos++;return;}
+      let mins=0;tareasDeEmpresa(ei).forEach(ti=>{const h=historicoEmpTarea(ei,ti);if(h)mins+=h;});
+      const item={id:planNuevoId(),tipo:'rutinaria',periodoMes:Pm,periodoAnio:Py,emp:ei,tarea:`Contabilidad rutinaria de ${MESES[Pm]} ${Py}`,responsable:resp,controlador:ctrl,inicio:planIso(ini),fin:planIso(fin),fechaControl:isNaN(dctrl)?'':planIso(ctl),mins,estado:'Pendiente',nota:''};
+      const av=planAvanceItem(item);if(av&&av.pct===100)item.estado='Hecho'; // si en el tablero ya esta todo hecho, arranca como Hecho
+      data.planItems.push(item);nuevos++;
+    });
+  }
+  closePlanPeriodoModal();
+  if(nuevos){markUnsaved();saveNow();renderPlanGantt();}
+  toast(nuevos?`${nuevos} bloque(s) de trabajo creados${omitidos?` (${omitidos} ya existian)`:''}`:'Ese plan ya estaba armado, no se agrego nada');
+}
+// arma tareas de regularizacion con los atrasos que ya calcula el tablero (horas propias, y aparte lo que espera al cliente)
 function cargarAtrasosAlPlan(){
   let nuevos=0;
   EMPRESAS.forEach((emp,ei)=>{
@@ -1530,39 +1660,40 @@ function cargarAtrasosAlPlan(){
     const agregar=(tarea,mins,estado)=>{
       if(!mins)return;
       if(data.planItems.some(p=>p.emp===ei&&p.tarea===tarea))return;
-      data.planItems.push({id:planNuevoId(),emp:ei,tarea,responsable:'',inicio:'',fin:'',mins,estado,nota:''});
+      data.planItems.push({id:planNuevoId(),tipo:'regularizacion',emp:ei,tarea,responsable:'',controlador:'',inicio:'',fin:'',fechaControl:'',mins,estado,nota:''});
       nuevos++;
     };
     agregar('Ponerse al dia (tareas atrasadas)',c.tiempoPropio,'Pendiente');
     agregar('Cuando llegue la documentacion del cliente',c.tiempoCliente,'Espera cliente');
   });
-  if(nuevos){markUnsaved();saveNow();renderPlanGantt();toast(`${nuevos} tarea(s) cargadas. Ahora ponele fecha y responsable`);}
+  if(nuevos){markUnsaved();saveNow();renderPlanGantt();toast(`${nuevos} tarea(s) de atraso cargadas. Ahora ponele fecha y responsable`);}
   else toast('No hay atrasos nuevos para cargar (o ya estaban cargados)');
 }
 function generarPlanPDF(){
-  if(!data.planItems.length){toast('No hay tareas en el plan para imprimir',true);return;}
-  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const semanas=planSemanas();const hoyL=planLunes(HOY).getTime();
   const items=planItemsOrdenados();
+  if(!items.length){toast('No hay tareas en el plan para imprimir',true);return;}
+  const fechaHoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const semanas=planSemanas(items);const hoyL=planLunes(HOY).getTime();
   const suma=(arr)=>arr.reduce((a,p)=>a+(p.mins||0),0);
   const totalMins=suma(items);
   const hechoMins=suma(items.filter(p=>p.estado==='Hecho'||p.estado==='Revisado'));
   const clienteMins=suma(items.filter(p=>p.estado==='Espera cliente'));
-  const restanteMins=totalMins-hechoMins-clienteMins;
+  const vencidos=items.filter(planVencido).length;
   const th=semanas.map(s=>`<th class="w${s.getTime()===hoyL?' hoy':''}">${planFmtSemana(s)}</th>`).join('');
   const filas=items.map(p=>{
-    const celdas=semanas.map(s=>`<td class="c${s.getTime()===hoyL?' hoy':''}"${planEnSemana(p,s)?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}"`:''}></td>`).join('');
-    return `<tr><td><strong>${planEsc(planNombreEmp(p.emp))}</strong><br>${planEsc(p.tarea)}${p.nota?`<br><span class="n">${planEsc(p.nota)}</span>`:''}</td><td>${planEsc(p.responsable)||'—'}</td><td style="text-align:right">${p.mins?fmtMin(p.mins):'--'}</td><td style="white-space:nowrap">${planFechasTxt(p)}</td><td>${p.estado}</td>${celdas}</tr>`;
+    const celdas=semanas.map(s=>`<td class="c${s.getTime()===hoyL?' hoy':''}"${planEnSemana(p,s)?` style="background:${PLAN_COLOR[p.estado]||'#CBD5E0'}"`:''}>${planControlEnSemana(p,s)?'<span class="ctl">◆</span>':''}</td>`).join('');
+    const venc=planVencido(p);
+    return `<tr><td><strong>${planEsc(planNombreEmp(p.emp))}</strong><br>${planEsc(p.tarea)}${p.nota?`<br><span class="n">${planEsc(p.nota)}</span>`:''}</td><td>${planEsc(p.responsable)||'—'}</td><td>${planControlTxt(p).replace('class="pg-n"','class="n"')}</td><td style="text-align:right">${p.mins?fmtMin(p.mins):'--'}</td><td style="white-space:nowrap"${venc?' class="venc"':''}>${planFechasTxt(p)}${venc?'<br>vencido':''}</td><td style="white-space:nowrap">${planAvanceTxt(p,false)}</td><td>${p.estado}</td>${celdas}</tr>`;
   }).join('');
   const leyenda=PLAN_ESTADOS.map(e=>`<span class="lg" style="background:${PLAN_COLOR[e]}"></span>${e}`).join(' &nbsp; ');
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Plan de regularizacion</title>
-  <style>@page{size:A4 landscape;margin:10mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,sans-serif;color:#1a202c;font-size:10px;margin:0;padding:14px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-end}.res{display:flex;gap:10px;margin-bottom:12px}.res div{flex:1;border:1px solid #CBD5E0;border-radius:6px;padding:6px 10px;text-align:center}.res b{display:block;font-size:15px;color:#1B2A4A}.res small{font-size:8px;text-transform:uppercase;color:#4A5568;font-weight:700}table{width:100%;border-collapse:collapse}th{background:#1B2A4A;color:#fff;padding:5px 6px;text-align:left;font-size:9px}th.w{text-align:center;padding:5px 1px;font-size:8px;min-width:26px}td{padding:5px 6px;border-bottom:1px solid #E2E8F0;vertical-align:middle}td.c{padding:0;height:26px;border-left:1px solid #EDF2F7}.hoy{border-left:2px solid #E53E3E!important}.n{font-size:8px;color:#718096}.lg{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:middle}.leyenda{margin-top:10px;font-size:9px;color:#4A5568}.firma{margin-top:30px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:4px;font-size:9px;color:#718096;text-align:center}.footer{margin-top:12px;font-size:8px;color:#A0AEC0;text-align:center}tr{page-break-inside:avoid}</style></head><body>
-  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:9px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:14px">Plan de regularizacion</div><div style="font-size:10px;color:#718096">Generado el ${fechaHoy}</div></div></div>
-  <div class="res"><div><b>${fmtMin(totalMins)||'--'}</b><small>Horas planificadas</small></div><div><b>${fmtMin(hechoMins)||'--'}</b><small>Hechas o revisadas</small></div><div><b>${fmtMin(restanteMins)||'--'}</b><small>Propias por hacer</small></div><div><b>${fmtMin(clienteMins)||'--'}</b><small>Esperan al cliente</small></div></div>
-  <table><thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Horas</th><th>Fechas</th><th>Control</th>${th}</tr></thead><tbody>${filas}</tbody></table>
-  <div class="leyenda">${leyenda} &nbsp; | &nbsp; Linea roja: semana actual. Cada columna es una semana (fecha del lunes).</div>
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Plan de trabajo</title>
+  <style>@page{size:A4 landscape;margin:10mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,sans-serif;color:#1a202c;font-size:9px;margin:0;padding:12px}.logo{font-size:20px;font-weight:700;color:#1B2A4A}.logo span{color:#4299E1}.header{border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-end}.res{display:flex;gap:8px;margin-bottom:10px}.res div{flex:1;border:1px solid #CBD5E0;border-radius:6px;padding:5px 8px;text-align:center}.res b{display:block;font-size:14px;color:#1B2A4A}.res small{font-size:8px;text-transform:uppercase;color:#4A5568;font-weight:700}table{width:100%;border-collapse:collapse}th{background:#1B2A4A;color:#fff;padding:4px 5px;text-align:left;font-size:8.5px}th.w{text-align:center;padding:4px 1px;font-size:7.5px;min-width:24px}td{padding:4px 5px;border-bottom:1px solid #E2E8F0;vertical-align:middle}td.c{padding:0;height:24px;border-left:1px solid #EDF2F7;text-align:center}.ctl{font-size:10px;color:#1A202C}.hoy{border-left:2px solid #E53E3E!important}.venc{color:#C53030;font-weight:700}.n{font-size:7.5px;color:#718096}.lg{display:inline-block;width:9px;height:9px;margin-right:3px;vertical-align:middle}.leyenda{margin-top:8px;font-size:8.5px;color:#4A5568}.firma{margin-top:26px;display:flex;gap:40px}.firma div{flex:1;border-top:1px solid #1a202c;padding-top:4px;font-size:9px;color:#718096;text-align:center}.footer{margin-top:10px;font-size:8px;color:#A0AEC0;text-align:center}tr{page-break-inside:avoid}</style></head><body>
+  <div class="header"><div><div class="logo">Grupo <span>Pressacco</span></div><div style="font-size:9px;color:#718096">Estudio Contable · Departamento de Contabilidad</div></div><div style="text-align:right"><div style="font-weight:700;font-size:14px">Plan de trabajo — panorama completo</div><div style="font-size:10px;color:#718096">Generado el ${fechaHoy}</div></div></div>
+  <div class="res"><div><b>${items.length}</b><small>Bloques de trabajo</small></div><div><b>${fmtMin(totalMins)||'--'}</b><small>Horas planificadas</small></div><div><b>${fmtMin(hechoMins)||'--'}</b><small>Hechas o revisadas</small></div><div><b>${fmtMin(clienteMins)||'--'}</b><small>Esperan al cliente</small></div><div><b style="color:${vencidos?'#C53030':'#276749'}">${vencidos}</b><small>Vencidos sin completar</small></div></div>
+  <table><thead><tr><th>Empresa / Tarea</th><th>Responsable</th><th>Controla</th><th>Horas</th><th>Fechas</th><th>Avance real</th><th>Estado</th>${th}</tr></thead><tbody>${filas}</tbody></table>
+  <div class="leyenda">${leyenda} &nbsp; | &nbsp; ◆ fecha de control &nbsp; | &nbsp; Linea roja: semana actual. Cada columna es una semana (fecha del lunes).</div>
   <div class="firma"><div>Preparado por</div><div>Revisado por</div><div>Fecha</div></div>
-  <div class="footer">Las horas son estimaciones segun el promedio historico de cada tarea. Documento generado por el Tablero de Control Contable.</div>
+  <div class="footer">Las horas son estimaciones segun el promedio historico de cada tarea. "Avance real" sale de lo marcado en el tablero. Documento generado por el Tablero de Control Contable.</div>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),10000);
   toast('Plan generado');
@@ -2013,7 +2144,7 @@ function showPanel(name,btn){
   if(btn)btn.classList.add('active');
   activePanel=name;renderAll();
 }
-['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo','modal-filtro-resumen','modal-plan'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+['modal-ej','modal-cierre','modal-edit-tiempo','modal-periodica','modal-tareasemp','modal-plantilla','modal-aplicar-plantilla','modal-nueva-tarea','modal-hoja-trabajo','modal-filtro-resumen','modal-plan','modal-plan-periodo'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 // ═══ INIT ═══
 function init(){buildYearSel();buildDashMesSel();buildWorkEmpSel();buildTiempoEmpFiltro();buildPlanMesSel();}

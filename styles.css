@@ -237,3 +237,5 @@ button:hover{background:var(--grayl)}
 #plan-gantt .pg-t{min-width:210px}
 #plan-gantt .pg-n{font-size:10px;color:var(--gray)}
 #plan-gantt tbody tr:hover td:not(.pg-c){background:var(--grayl)}
+#plan-gantt .pg-venc{color:var(--red);font-weight:700;font-size:11px}
+#plan-gantt .pg-ctl{display:block;text-align:center;line-height:34px;font-size:12px;color:#1A202C;text-shadow:0 0 2px #fff}

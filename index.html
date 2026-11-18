@@ -203,20 +203,26 @@
       <table id="resumen-ejec-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
     </div>
 
-    <div class="row-gap" style="margin-bottom:.75rem;justify-content:space-between;flex-wrap:wrap">
+    <div class="row-gap" style="margin-bottom:.6rem;justify-content:space-between;flex-wrap:wrap">
       <div>
-        <div style="font-size:15px;font-weight:700;color:var(--navy)">Plan de regularizacion (cronograma)</div>
-        <div style="font-size:12px;color:var(--gray);margin-top:2px">Que se hace, quien, cuando y como se controla. Se edita a mano.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--navy)">Plan de trabajo — panorama completo</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Que se hace, quien lo hace, quien lo controla y cuando. Incluye lo planificado a futuro y lo atrasado. Se edita a mano.</div>
       </div>
       <div class="row-gap">
-        <button class="btn-ghost btn-sm" onclick="cargarAtrasosAlPlan()"><i class="ti ti-download"></i> Cargar atrasos del tablero</button>
+        <button class="btn-primary btn-sm" onclick="openPlanPeriodoModal()"><i class="ti ti-calendar-plus"></i> Armar plan del periodo</button>
+        <button class="btn-ghost btn-sm" onclick="cargarAtrasosAlPlan()"><i class="ti ti-download"></i> Cargar atrasos</button>
         <button class="btn-ghost btn-sm" onclick="openPlanModal()"><i class="ti ti-plus"></i> Agregar tarea</button>
         <button class="btn-primary btn-sm" onclick="generarPlanPDF()"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto;padding:0;margin-bottom:1.75rem">
+    <div class="row-gap" style="margin-bottom:.6rem">
+      <select class="sel" id="plan-filtro-emp" onchange="renderPlanGantt()"></select>
+      <select class="sel" id="plan-orden" onchange="renderPlanGantt()"><option value="fecha">Ordenar por fecha</option><option value="empresa">Ordenar por empresa</option></select>
+    </div>
+    <div class="card" style="overflow-x:auto;padding:0;margin-bottom:.5rem">
       <table id="plan-gantt" style="border-collapse:collapse;font-size:12px"></table>
     </div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:1.75rem">Cada columna es una semana (fecha del lunes). Linea roja: semana actual. ◆ marca la fecha de control. "Avance real" sale de lo que marcas en Cargar trabajo.</div>
 
     <div class="row-gap" style="margin-bottom:1rem;justify-content:space-between;flex-wrap:wrap">
       <div>
@@ -476,22 +482,64 @@
 <div class="modal-overlay" id="modal-plan">
   <div class="modal">
     <h3 id="modal-plan-title">Tarea del plan</h3>
-    <div class="frow"><label>Empresa</label><select id="plan-emp"></select></div>
-    <div class="frow"><label>Tarea / que se hace</label><input type="text" id="plan-tarea" placeholder="Ej: Ponerse al dia con las conciliaciones"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Empresa</label><select id="plan-emp"></select></div>
+      <div class="frow"><label>Tipo</label><select id="plan-tipo" onchange="planTogglePeriodo()"></select></div>
+    </div>
+    <div id="plan-periodo-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Mes contable que se trabaja</label><select id="plan-pmes"></select></div>
+      <div class="frow"><label>Ano</label><select id="plan-panio"></select></div>
+    </div>
+    <div class="frow"><label>Tarea / que se hace</label><input type="text" id="plan-tarea" placeholder="Ej: Contabilidad rutinaria de septiembre"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
       <div class="frow"><label>Responsable</label><input type="text" id="plan-resp" list="plan-resp-list" placeholder="Nombre"><datalist id="plan-resp-list"></datalist></div>
+      <div class="frow"><label>Quien controla</label><input type="text" id="plan-ctrl" list="plan-ctrl-list" placeholder="Nombre"><datalist id="plan-ctrl-list"></datalist></div>
       <div class="frow"><label>Horas estimadas</label><input type="number" id="plan-horas" min="0" step="0.25" placeholder="Ej: 2.5"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="frow"><label>Fecha de inicio</label><input type="date" id="plan-inicio"></div>
-      <div class="frow"><label>Fecha de fin</label><input type="date" id="plan-fin"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="frow"><label>Inicio</label><input type="date" id="plan-inicio"></div>
+      <div class="frow"><label>Fin</label><input type="date" id="plan-fin"></div>
+      <div class="frow"><label>Fecha de control</label><input type="date" id="plan-fctrl"></div>
     </div>
-    <div class="frow"><label>Control (estado)</label><select id="plan-estado"></select></div>
+    <div class="frow"><label>Estado</label><select id="plan-estado"></select></div>
     <div class="frow"><label>Nota (opcional)</label><input type="text" id="plan-nota" placeholder="Ej: depende de que llegue el extracto"></div>
     <div class="modal-btns">
       <button onclick="closePlanModal()">Cancelar</button>
       <button class="btn-danger" id="plan-del-btn" style="display:none" onclick="eliminarPlanDesdeModal()"><i class="ti ti-trash"></i> Eliminar</button>
       <button class="btn-primary" onclick="savePlanItem()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ARMAR PLAN DEL PERIODO -->
+<div class="modal-overlay" id="modal-plan-periodo">
+  <div class="modal">
+    <h3>Armar plan del periodo</h3>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Crea un bloque de "contabilidad rutinaria" por empresa y por mes, con fechas, responsable y control. Despues podes ajustar cada uno a mano. Lo que ya existe no se duplica.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="frow"><label>Primer mes de trabajo</label><select id="pp-mes"></select></div>
+      <div class="frow"><label>Ano</label><select id="pp-anio"></select></div>
+      <div class="frow"><label>Cantidad de meses</label><input type="number" id="pp-cant" min="1" max="12"></div>
+    </div>
+    <div class="frow"><label>El trabajo de cada mes corresponde a</label>
+      <select id="pp-lag"><option value="1">El mes anterior (se trabaja a mes vencido)</option><option value="0">El mismo mes</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="frow"><label>Dia de inicio</label><input type="number" id="pp-dini" min="1" max="31"></div>
+      <div class="frow"><label>Dia de fin</label><input type="number" id="pp-dfin" min="1" max="31"></div>
+      <div class="frow"><label>Control a los N dias</label><input type="number" id="pp-dctrl" min="0" max="90"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="frow"><label>Responsable</label><input type="text" id="pp-resp" list="plan-resp-list" placeholder="Nombre"></div>
+      <div class="frow"><label>Quien controla</label><input type="text" id="pp-ctrl" list="plan-ctrl-list" placeholder="Nombre"></div>
+    </div>
+    <div class="frow"><label>Empresas</label>
+      <div class="row-gap" style="margin-bottom:.4rem"><button class="btn-ghost btn-sm" onclick="marcarTodasPlanPeriodo(true)">Marcar todas</button><button class="btn-ghost btn-sm" onclick="marcarTodasPlanPeriodo(false)">Desmarcar todas</button></div>
+      <div class="cfg-box"><div id="pp-emps"></div></div>
+    </div>
+    <div class="modal-btns">
+      <button onclick="closePlanPeriodoModal()">Cancelar</button>
+      <button class="btn-primary" onclick="armarPlanPeriodo()"><i class="ti ti-check"></i> Armar plan</button>
     </div>
   </div>
 </div>

@@ -239,3 +239,8 @@ button:hover{background:var(--grayl)}
 #plan-gantt tbody tr:hover td:not(.pg-c){background:var(--grayl)}
 #plan-gantt .pg-venc{color:var(--red);font-weight:700;font-size:11px}
 #plan-gantt .pg-ctl{display:block;text-align:center;line-height:34px;font-size:12px;color:#1A202C;text-shadow:0 0 2px #fff}
+#plan-gantt th.pg-w{min-width:26px;padding:5px 1px;font-size:10px}
+#plan-gantt td.pg-c{min-width:26px}
+#plan-gantt th.pg-m{text-align:center;border-left:1px solid #2C3E66;font-size:10px;padding:4px 2px}
+#plan-gantt .pg-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-bottom:3px}
+#plan-gantt .pg-rev{display:block;font-size:10px;color:var(--gray);cursor:pointer}
